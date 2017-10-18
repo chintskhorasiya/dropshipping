@@ -222,7 +222,8 @@ define('PRODUCT_EXISTS','Product already exists');
 //amazon sandbox details
 if(!defined('AWS_API_KEY')) define('AWS_API_KEY', 'AKIAJL5OCKUJ5TXWF47Q');
 if(!defined('AWS_API_SECRET_KEY')) define('AWS_API_SECRET_KEY', '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');
-if(!defined('AWS_ASSOCIATE_TAG')) define('AWS_ASSOCIATE_TAG', 'shoes');
+//if(!defined('AWS_ASSOCIATE_TAG')) define('AWS_ASSOCIATE_TAG', 'shoes');
+if(!defined('AWS_ASSOCIATE_TAG')) define('AWS_ASSOCIATE_TAG', 'dropshipping7-20');
 if(!defined('AWS_ANOTHER_ASSOCIATE_TAG')) define('AWS_ANOTHER_ASSOCIATE_TAG', '');
 
 //ebay sandbox details

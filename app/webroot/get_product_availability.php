@@ -3,7 +3,8 @@ include('function.php');
 require_once "vendor/autoload.php";
 define('AWS_API_KEY', 'AKIAJL5OCKUJ5TXWF47Q');
 define('AWS_API_SECRET_KEY', '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');
-define('AWS_ASSOCIATE_TAG', 'shoes');
+//define('AWS_ASSOCIATE_TAG', 'shoes');
+define('AWS_ASSOCIATE_TAG', 'dropshipping7-20');
 define('AWS_ANOTHER_ASSOCIATE_TAG', '');
 
 $country_cod = 'com';
