@@ -209,7 +209,8 @@ class ListingsController extends AppController {
 
             {
 
-                $awnid = $this->get_awnid($this->data['Listing']['content']);
+                //$awnid = $this->get_awnid($this->data['Listing']['content']);
+                $awnid = $this->get_asin($awnid); // [[CUSTOM]] // to get correct ASIN number for amazon product
 
             }
 
