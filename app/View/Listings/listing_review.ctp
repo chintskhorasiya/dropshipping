@@ -363,12 +363,22 @@
                                                 ?>
                                                 <div class="specification removespec<?php echo ($cnt);?>">
                                                     <div class="form-group col-md-6 padding-left-o">
+                                                        <?php if($key == "Features") $key = "Style"; ?>
                                                         <div class="input-group">
                                                             <input type="text" class="form-control validate required" name="item_key[]" value="<?php echo $key;?>">
                                                         </div>
                                                     </div>
                                                     <div class="form-group col-md-6 padding-left-o">
                                                         <div class="input-group pull-left" style="width: 91%;">
+                                                            <?php if($key == "Style") {
+                                                                $valueArr = explode(" ", $value);
+                                                                $value = "";
+                                                                foreach($valueArr as $vAkey => $vAvalue){
+                                                                    if($vAkey < 4){
+                                                                        $value .= $vAvalue." ";
+                                                                    }   
+                                                                }
+                                                            } ?>
                                                             <input type="text" class="form-control validate required" name="item_val[]" value="<?php echo $value;?>">
                                                         </div>
                                                         <button type="button" class="btn btn-info pull-right" onclick="removespec('<?php echo ($cnt);?>')"><i class="fa fa-times"></i></button>
@@ -543,7 +553,7 @@
                                             {
                                             ?>
                                                 <div class="pull-right col-md-3">
-                                                    <input type="checkbox" checked="checked" name="withvariation" id="withvariation" value="1">With Variations
+                                                    <input type="checkbox" name="withvariation" id="withvariation" value="1">With Variations
                                                 </div>
                                             <?php
                                             }
@@ -662,7 +672,7 @@
                                                 {
                                                 ?>
                                                     <div class="pull-right col-md-3">
-                                                        <input type="checkbox" checked="checked" name="withvariation" id="withvariation" value="1">With Variations
+                                                        <input type="checkbox" name="withvariation" id="withvariation" value="1">With Variations
                                                     </div>
                                                 <?php
                                                 }
