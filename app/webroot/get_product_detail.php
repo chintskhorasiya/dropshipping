@@ -148,10 +148,22 @@ if(!empty($response))
             $new_image_array[$i] = $image_arr[$i]['LargeImage']['URL'];
         }
 
-        $price = (isset($response['Items']['Item']['Offers']['Offer']['OfferListing']['Price']['Amount']))?$response['Items']['Item']['Offers']['Offer']['OfferListing']['Price']['Amount']:'';
-        $amount_save = (isset($response['Items']['Item']['Offers']['Offer']['OfferListing']['AmountSaved']['Amount']))?$response['Items']['Item']['Offers']['Offer']['OfferListing']['AmountSaved']['Amount']:'';
-        $sale_price = (isset($response['Items']['Item']['Offers']['Offer']['OfferListing']['SalePrice']['Amount']))?$response['Items']['Item']['Offers']['Offer']['OfferListing']['SalePrice']['Amount']:'';
-        $percentage_save = (isset($response['Items']['Item']['Offers']['Offer']['OfferListing']['PercentageSaved']))?$response['Items']['Item']['Offers']['Offer']['OfferListing']['PercentageSaved']:'';
+        if(isset($response['Items']['Item']['Offers']['Offer']) && is_array($response['Items']['Item']['Offers']['Offer']))
+        {
+            $price = (isset($response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['Price']['Amount']))?$response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['Price']['Amount']:'';
+            //var_dump($price);
+            $amount_save = (isset($response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['AmountSaved']['Amount']))?$response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['AmountSaved']['Amount']:'';
+            $sale_price = (isset($response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['SalePrice']['Amount']))?$response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['SalePrice']['Amount']:'';
+            $percentage_save = (isset($response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['PercentageSaved']))?$response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['PercentageSaved']:'';
+        }
+        else
+        {
+            $price = (isset($response['Items']['Item']['Offers']['Offer']['OfferListing']['Price']['Amount']))?$response['Items']['Item']['Offers']['Offer']['OfferListing']['Price']['Amount']:'';
+            //var_dump($price);
+            $amount_save = (isset($response['Items']['Item']['Offers']['Offer']['OfferListing']['AmountSaved']['Amount']))?$response['Items']['Item']['Offers']['Offer']['OfferListing']['AmountSaved']['Amount']:'';
+            $sale_price = (isset($response['Items']['Item']['Offers']['Offer']['OfferListing']['SalePrice']['Amount']))?$response['Items']['Item']['Offers']['Offer']['OfferListing']['SalePrice']['Amount']:'';
+            $percentage_save = (isset($response['Items']['Item']['Offers']['Offer']['OfferListing']['PercentageSaved']))?$response['Items']['Item']['Offers']['Offer']['OfferListing']['PercentageSaved']:'';
+        }
 
         $new_price = '';
         if($sale_price=='' && $amount_save!='')
@@ -163,6 +175,8 @@ if(!empty($response))
             $price = $sale_price;
             $new_price = $sale_price + $amount_save;
         }
+
+        //var_dump($price);
 
         $feature_array = $newfeature_array = array();
 
@@ -237,6 +251,8 @@ if(!empty($response))
             $add_product_array['sku'] = $add_product_array['asin_no'];
         }
         // for SKU [[CUSTOM]]
+
+        //pre($add_product_array);exit;
 
 
         $TotalVariations = (int)$response['Items']['Item']['Variations']['TotalVariations'];
