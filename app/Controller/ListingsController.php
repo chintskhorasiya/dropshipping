@@ -873,6 +873,40 @@ class ListingsController extends AppController {
 
                     }
 
+                    if(!empty($variations_items)) // [[CUSTOM]] // added variation specification for single product
+                    {
+                        foreach ($variations_items as $variations_items_key => $variations_items_value)
+                        {
+
+                            if(!empty($variations_items_value->sku))
+                            {
+                                $org_sku = substr($variations_items_value->sku, 3);
+                                $this_sku = $variations_items_value->sku;
+                                
+                                if($_POST['sku'] == $this_sku)
+                                {
+                                    foreach ($variations_items_value->attrs as $var_items_value_key => $var_items_value_value) {
+
+                                        $specific = new Types\NameValueListType();
+                                        //$specific->Name = 'Size Type';
+                                        //$specific->Value[] = 'Regular';
+                                
+                                        if($var_items_value_value->Name == "Size" && in_array($primaryCategory, $size_mens_categories)){
+                                            $specific->Name = "Size (Men's)";
+                                        } elseif($var_items_value_value->Name == "Size" && in_array($primaryCategory, $mens_bottom_size_categories)){
+                                            $specific->Name = "Bottoms Size (Men's)";
+                                        }
+                                        $specific->Value[] = $var_items_value_value->Value;
+                                        $item->ItemSpecifics->NameValueList[] = $specific;
+                                    }
+                                }
+
+                            }
+
+                        }
+
+                    }
+
                     if(in_array($primaryCategory, $size_mens_categories) || in_array($primaryCategory, $mens_bottom_size_categories)){
                         $specific = new Types\NameValueListType();
                         $specific->Name = 'Size Type';
