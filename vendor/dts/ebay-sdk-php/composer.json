@@ -1,0 +1,40 @@
+{
+    "name": "dts/ebay-sdk-php",
+    "description": "An eBay SDK for PHP. Use the eBay API in your PHP projects.",
+    "keywords": ["ebay", "api", "sdk"],
+    "homepage": "http://devbay.net/",
+    "type": "library",
+    "license": "(Apache-2.0 and MIT)",
+    "authors": [
+        {
+            "name": "David T. Sadler",
+            "email": "davidtsadler@googlemail.com",
+            "homepage": "http://davidtsadler.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/davidtsadler/ebay-sdk-php/issues"
+    },
+    "require": {
+        "php": ">=5.5",
+        "guzzlehttp/guzzle": "~6.0",
+        "guzzlehttp/psr7": "~1.0",
+        "guzzlehttp/promises": "^1.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~4.0",
+        "squizlabs/php_codesniffer": "2.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "DTS\\eBaySDK\\": "src/"
+        },
+        "files": ["src/functions.php"]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "DTS\\eBaySDK\\Test\\": "test/"
+        },
+        "classmap": ["build/"]
+    }
+}

@@ -1,0 +1,32 @@
+[18-Feb-2017 15:37:00 Asia/Kolkata] PHP Warning:  include(auth.php): failed to open stream: No such file or directory in /home/projectsseawinds/public_html/dma/dashboard.php on line 5
+[18-Feb-2017 15:37:00 Asia/Kolkata] PHP Warning:  include(auth.php): failed to open stream: No such file or directory in /home/projectsseawinds/public_html/dma/dashboard.php on line 5
+[18-Feb-2017 15:37:00 Asia/Kolkata] PHP Warning:  include(): Failed opening 'auth.php' for inclusion (include_path='.:/usr/lib/php:/usr/local/lib/php') in /home/projectsseawinds/public_html/dma/dashboard.php on line 5
+[18-Feb-2017 15:37:00 Asia/Kolkata] PHP Warning:  Invalid argument supplied for foreach() in /home/projectsseawinds/public_html/dma/header.php on line 32
+[18-Feb-2017 15:48:46 Asia/Kolkata] PHP Warning:  include(auth.php): failed to open stream: No such file or directory in /home/projectsseawinds/public_html/dma/dashboard.php on line 5
+[18-Feb-2017 15:48:46 Asia/Kolkata] PHP Warning:  include(auth.php): failed to open stream: No such file or directory in /home/projectsseawinds/public_html/dma/dashboard.php on line 5
+[18-Feb-2017 15:48:46 Asia/Kolkata] PHP Warning:  include(): Failed opening 'auth.php' for inclusion (include_path='.:/usr/lib/php:/usr/local/lib/php') in /home/projectsseawinds/public_html/dma/dashboard.php on line 5
+[18-Feb-2017 15:48:46 Asia/Kolkata] PHP Warning:  Invalid argument supplied for foreach() in /home/projectsseawinds/public_html/dma/header.php on line 32
+[18-Feb-2017 15:50:46 Asia/Kolkata] PHP Warning:  include(auth.php): failed to open stream: No such file or directory in /home/projectsseawinds/public_html/dma/dashboard.php on line 5
+[18-Feb-2017 15:50:46 Asia/Kolkata] PHP Warning:  include(auth.php): failed to open stream: No such file or directory in /home/projectsseawinds/public_html/dma/dashboard.php on line 5
+[18-Feb-2017 15:50:46 Asia/Kolkata] PHP Warning:  include(): Failed opening 'auth.php' for inclusion (include_path='.:/usr/lib/php:/usr/local/lib/php') in /home/projectsseawinds/public_html/dma/dashboard.php on line 5
+[18-Feb-2017 15:50:46 Asia/Kolkata] PHP Warning:  Invalid argument supplied for foreach() in /home/projectsseawinds/public_html/dma/header.php on line 32
+[18-Feb-2017 15:54:51 Asia/Kolkata] PHP Warning:  include(auth.php): failed to open stream: No such file or directory in /home/projectsseawinds/public_html/dma/dashboard.php on line 5
+[18-Feb-2017 15:54:51 Asia/Kolkata] PHP Warning:  include(auth.php): failed to open stream: No such file or directory in /home/projectsseawinds/public_html/dma/dashboard.php on line 5
+[18-Feb-2017 15:54:51 Asia/Kolkata] PHP Warning:  include(): Failed opening 'auth.php' for inclusion (include_path='.:/usr/lib/php:/usr/local/lib/php') in /home/projectsseawinds/public_html/dma/dashboard.php on line 5
+[18-Feb-2017 15:54:51 Asia/Kolkata] PHP Warning:  Invalid argument supplied for foreach() in /home/projectsseawinds/public_html/dma/header.php on line 32
+[18-Feb-2017 15:56:58 Asia/Kolkata] PHP Warning:  include(auth.php): failed to open stream: No such file or directory in /home/projectsseawinds/public_html/dma/dashboard.php on line 5
+[18-Feb-2017 15:56:58 Asia/Kolkata] PHP Warning:  include(auth.php): failed to open stream: No such file or directory in /home/projectsseawinds/public_html/dma/dashboard.php on line 5
+[18-Feb-2017 15:56:58 Asia/Kolkata] PHP Warning:  include(): Failed opening 'auth.php' for inclusion (include_path='.:/usr/lib/php:/usr/local/lib/php') in /home/projectsseawinds/public_html/dma/dashboard.php on line 5
+[18-Feb-2017 15:56:58 Asia/Kolkata] PHP Warning:  Invalid argument supplied for foreach() in /home/projectsseawinds/public_html/dma/header.php on line 32
+[18-Feb-2017 15:57:19 Asia/Kolkata] PHP Warning:  include(auth.php): failed to open stream: No such file or directory in /home/projectsseawinds/public_html/dma/store-setting.php on line 5
+[18-Feb-2017 15:57:19 Asia/Kolkata] PHP Warning:  include(auth.php): failed to open stream: No such file or directory in /home/projectsseawinds/public_html/dma/store-setting.php on line 5
+[18-Feb-2017 15:57:19 Asia/Kolkata] PHP Warning:  include(): Failed opening 'auth.php' for inclusion (include_path='.:/usr/lib/php:/usr/local/lib/php') in /home/projectsseawinds/public_html/dma/store-setting.php on line 5
+[18-Feb-2017 15:57:19 Asia/Kolkata] PHP Warning:  Invalid argument supplied for foreach() in /home/projectsseawinds/public_html/dma/header.php on line 32
+[18-Feb-2017 15:57:25 Asia/Kolkata] PHP Warning:  include(auth.php): failed to open stream: No such file or directory in /home/projectsseawinds/public_html/dma/store-stats.php on line 5
+[18-Feb-2017 15:57:25 Asia/Kolkata] PHP Warning:  include(auth.php): failed to open stream: No such file or directory in /home/projectsseawinds/public_html/dma/store-stats.php on line 5
+[18-Feb-2017 15:57:25 Asia/Kolkata] PHP Warning:  include(): Failed opening 'auth.php' for inclusion (include_path='.:/usr/lib/php:/usr/local/lib/php') in /home/projectsseawinds/public_html/dma/store-stats.php on line 5
+[18-Feb-2017 15:57:25 Asia/Kolkata] PHP Warning:  Invalid argument supplied for foreach() in /home/projectsseawinds/public_html/dma/header.php on line 32
+[18-Feb-2017 15:57:28 Asia/Kolkata] PHP Warning:  include(auth.php): failed to open stream: No such file or directory in /home/projectsseawinds/public_html/dma/amazon-us.php on line 5
+[18-Feb-2017 15:57:28 Asia/Kolkata] PHP Warning:  include(auth.php): failed to open stream: No such file or directory in /home/projectsseawinds/public_html/dma/amazon-us.php on line 5
+[18-Feb-2017 15:57:28 Asia/Kolkata] PHP Warning:  include(): Failed opening 'auth.php' for inclusion (include_path='.:/usr/lib/php:/usr/local/lib/php') in /home/projectsseawinds/public_html/dma/amazon-us.php on line 5
+[18-Feb-2017 15:57:28 Asia/Kolkata] PHP Warning:  Invalid argument supplied for foreach() in /home/projectsseawinds/public_html/dma/header.php on line 32

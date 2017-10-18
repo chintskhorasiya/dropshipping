@@ -1,0 +1,17 @@
+RewriteCond %{HTTP_HOST} ^projects.seawindsolution.com/dma/$
+RewriteRule (.*) projects.seawindsolution.com/dma/$1 [R=301,L]
+RewriteEngine On
+RewriteBase /dma/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+
+ErrorDocument 404 /404.php
+
+
+<Files .htaccess>
+order allow,deny
+deny from all
+</Files>
+
+Options All -Indexes
