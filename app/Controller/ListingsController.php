@@ -292,15 +292,11 @@ class ListingsController extends AppController {
 
     function listing_requests() {
 
-
-
         //$user_encryptid
 
         $this->layout = 'default';
 
         $this->checklogin();
-
-
 
         $userid = $this->Session->read(md5(SITE_TITLE) . 'USERID');
 
@@ -313,6 +309,7 @@ class ListingsController extends AppController {
         $product_data = $this->Product->find('all', array('conditions' => array('user_id'=>$userid)));
 
         $this->set('product_data',$product_data);
+        //$this->set('user_encryptid',$user_encryptid);
 
 
 

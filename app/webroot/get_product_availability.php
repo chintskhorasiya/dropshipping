@@ -49,8 +49,6 @@ $awnid = $_GET['awnid'];
 $lookup = new Lookup();
 //$lookup->setIdType('ASIN');
 $lookup->setResponseGroup(array('ItemAttributes', 'Offers')); // More detailed information
-//$lookup->setItemId('B071FVJ9PJ');
-//$lookup->setItemId('B06VW5QNBF');
 $lookup->setItemId($awnid);
 $lookup->setAvailability('Available');
 $lookup->setCondition('All');
@@ -58,10 +56,8 @@ $response = $apaiIo->runOperation($lookup);
 
 $response = json_decode (json_encode (simplexml_load_string ($response)), true);
 
-//pre($_GET);
-//pre($_POST);
-pre($response);
-exit;
+//pre($response);
+//exit;
 //pre($response['Items']['Item']['BrowseNodes']['BrowseNode']);exit;
 
 function pre($data)
