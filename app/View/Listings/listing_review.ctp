@@ -190,7 +190,7 @@
                                     <div class="form-group col-md-4 padding-left-o">
                                         <label>Original Price</label>
                                         <div class="input-group">
-                                            <span class="input-group-addon"><?php echo $curSymbol; ?></span><input type="number" disabled class="form-control validate required" name="coupon_name" value="<?php echo ($product_data['Product']['list_amount']/100);?>">
+                                            <span class="input-group-addon"><?php echo $curSymbol; ?></span><input type="number" disabled class="form-control validate required" name="coupon_name" value="<?php if(!empty($product_data['Product']['list_amount'])) { echo ($product_data['Product']['list_amount']/100); } else { echo "100"; };?>">
                                         </div>
                                     </div>
                                     <div class="form-group col-md-4 padding-left-o">
@@ -199,7 +199,7 @@
                                         // [[CUSTOM]]
                                         $min_margin = (float)$source_settings_data['min_margin'];
                                         $marginpercent = (float)$source_settings_data['marginpercent'];
-                                        $original_price = $product_data['Product']['list_amount']/100;
+                                        $original_price = (!empty($product_data['Product']['list_amount']) ? $product_data['Product']['list_amount']/100 : 100 );
                                         //echo '<pre>'; 
                                         //var_dump(json_decode($source_settings_data['reprice_range']));
                                         //echo '</pre>';
@@ -281,7 +281,8 @@
                                     <div class="form-group col-md-4 padding-left-o">
                                         <label>Quantity</label>
                                         <div class="input-group">
-                                            <input type="number" disabled class="form-control validate required" name="coupon_name" value="<?php echo $source_settings_data['quantity']; ?>">
+                                            <input type="number" disabled class="form-control validate required" name="qty_number_dis" value="<?php if($product_data['Product']['qty'] != 0) { echo $source_settings_data['quantity']; } else { echo "0";} ?>">
+                                            <input type="hidden" name="qty_number" value="<?php if($product_data['Product']['qty'] != 0) { echo $source_settings_data['quantity']; } else { echo "0";} ?>" />
                                         </div>
                                         <div class="text-right">Price and quantity are determined by your repricing settings</div>
                                     </div>

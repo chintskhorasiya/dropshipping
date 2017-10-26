@@ -148,7 +148,31 @@ if(!empty($response))
             $new_image_array[$i] = $image_arr[$i]['LargeImage']['URL'];
         }
 
-        if(isset($response['Items']['Item']['Offers']['Offer']) && is_array($response['Items']['Item']['Offers']['Offer']))
+        $def_qty = (int) getDefaultQuantity($_GET['userid'], $_GET['sourceid']);
+        $def_sku_prefix = getDefaultSkuPrefix($_GET['userid'], $_GET['sourceid']);
+
+        // for QTY [[CUSTOM]]
+        
+        $totalOffers = (int) $response['Items']['Item']['Offers']['TotalOffers'];
+        
+        if($totalOffers > 0){
+            if(!empty($def_qty))
+            {
+                $add_product_array['qty'] = $def_qty;
+            }
+            else
+            {
+                $add_product_array['qty'] = "";
+            }
+        } else {
+            $add_product_array['qty'] = 0;
+        }
+
+        //var_dump($add_product_array['qty']);exit;
+
+        // for QTY [[CUSTOM]]
+
+        if(isset($response['Items']['Item']['Offers']['Offer']) && isset($response['Items']['Item']['Offers']['Offer'][0]))
         {
             $price = (isset($response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['Price']['Amount']))?$response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['Price']['Amount']:'';
             //var_dump($price);
@@ -158,6 +182,7 @@ if(!empty($response))
         }
         else
         {
+            
             $price = (isset($response['Items']['Item']['Offers']['Offer']['OfferListing']['Price']['Amount']))?$response['Items']['Item']['Offers']['Offer']['OfferListing']['Price']['Amount']:'';
             //var_dump($price);
             $amount_save = (isset($response['Items']['Item']['Offers']['Offer']['OfferListing']['AmountSaved']['Amount']))?$response['Items']['Item']['Offers']['Offer']['OfferListing']['AmountSaved']['Amount']:'';
@@ -237,9 +262,6 @@ if(!empty($response))
         {
             $add_product_array['a_cat_id'] = $awsCategories[0]->id;
         }
-
-        $def_qty = (int) getDefaultQuantity($_GET['userid'], $_GET['sourceid']);
-        $def_sku_prefix = getDefaultSkuPrefix($_GET['userid'], $_GET['sourceid']);
 
         // for SKU [[CUSTOM]]
         if(!empty($def_sku_prefix))

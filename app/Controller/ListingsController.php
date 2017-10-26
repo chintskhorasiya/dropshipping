@@ -557,14 +557,14 @@ class ListingsController extends AppController {
 
             $startPrice      = (float) $_POST['product_price'];
 
-            if(!empty($marginpercent)){
+            /*if(!empty($marginpercent)){
                 $final_margin = ($startPrice * $marginpercent)/100;
             }
             if(!empty($final_margin)){
                 $startPrice = round($startPrice + $final_margin, 2);
             } else {
                 $startPrice = round($startPrice, 2);
-            }
+            }*/
 
             //$buyItNowPrice   = $_POST['buyItNowPrice'];
 
@@ -591,8 +591,12 @@ class ListingsController extends AppController {
             $userid = $this->Session->read(md5(SITE_TITLE) . 'USERID');
             $this->loadmodel('SourceSettings');
             $source_settings_data = $this->SourceSettings->find('first',array('conditions' => array('source_id' => $storeId, 'user_id' => $userid)));
+
+            //var_dump($_POST['qty_number']);exit;
             
-            $def_qty = (int) (!empty($source_settings_data['SourceSettings']['quantity']) ? $source_settings_data['SourceSettings']['quantity'] : 1);
+            $def_qty = (int) ($_POST['qty_number'] != "" ? $_POST['qty_number'] : (!empty($source_settings_data['SourceSettings']['quantity']) ? $source_settings_data['SourceSettings']['quantity'] : 1));
+
+            //var_dump($def_qty);exit;
 
             $def_sku_prefix = (!empty($source_settings_data['SourceSettings']['skupattern']) ? $source_settings_data['SourceSettings']['skupattern'] : "");
             // [[CUSTOM]]
