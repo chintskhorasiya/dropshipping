@@ -281,8 +281,12 @@
                                     <div class="form-group col-md-4 padding-left-o">
                                         <label>Quantity</label>
                                         <div class="input-group">
+                                            <?php
+                                            //var_dump($product_data['Product']['qty']);
+                                            $product_data['Product']['qty'] = (int) $product_data['Product']['qty'];
+                                            ?>
                                             <input type="number" disabled class="form-control validate required" name="qty_number_dis" value="<?php if($product_data['Product']['qty'] !== 0) { echo $source_settings_data['quantity']; } else { echo "0";} ?>">
-                                            <input type="hidden" name="qty_number" value="<?php if($product_data['Product']['qty'] !== 0) { echo $source_settings_data['quantity']; } else { echo "0";} ?>" />
+                                            <input type="hidden" name="qty_number" value="<?php if($product_data['Product']['qty'] != 0) { echo $source_settings_data['quantity']; } else { echo "0";} ?>" />
                                         </div>
                                         <div class="text-right">Price and quantity are determined by your repricing settings</div>
                                     </div>
