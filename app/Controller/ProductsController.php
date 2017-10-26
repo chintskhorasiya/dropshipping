@@ -79,7 +79,9 @@ class ProductsController extends AppController {
 
         if(empty($productId))
         {
-            echo "Feature coming soon...";
+            //echo "Feature coming soon...";
+            $_SESSION['success_msg'] = "Feature coming soon...!";
+            return $this->redirect(DEFAULT_URL.'listings/listing_requests/');
         }
         else
         {
