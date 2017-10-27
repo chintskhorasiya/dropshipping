@@ -77,8 +77,179 @@ class ProductsController extends AppController {
 
         $this->checklogin();
 
+        $user_id = (int) $_SESSION[md5(SITE_TITLE) . 'USERID'];
+        
         if(empty($productId))
         {
+            $us_products_data = $this->Product->find('all', array('conditions' => array('status IN'=> array('0','1'), 'source_id'=>'1', 'user_id' => $user_id)));
+
+            //$this->pre($us_products_data);exit;
+
+            if(count($us_products_data) > 0)
+            {
+                $uspdIds = array();
+                $us_out_of_stock_items = array();
+                foreach ($us_products_data as $uspdkey => $uspdvalue)
+                {    
+                    array_push($uspdIds, $uspdvalue['Product']['asin_no']);
+                }
+
+                $uspdIds = array_chunk($uspdIds, 10);
+
+                foreach ($uspdIds as $uspd_slotkey => $uspd_slot)
+                {
+                    $country_cod = 'com';
+                    $siteId = Constants\SiteIds::US;
+                    /*if(isset($product_source_id) && $product_source_id==2)
+                    {
+                        $country_cod = 'co.uk';
+                        $siteId = Constants\SiteIds::GB;
+                    }*/
+
+                    $client = new \GuzzleHttp\Client();
+                    $request = new \ApaiIO\Request\GuzzleRequest($client);
+
+                    $conf = new GenericConfiguration();
+                    $conf
+                        ->setCountry($country_cod)
+                        ->setAccessKey(AWS_API_KEY)
+                        ->setSecretKey(AWS_API_SECRET_KEY)
+                        ->setAssociateTag(AWS_ASSOCIATE_TAG)
+                        ->setRequest($request);
+
+                    $apaiIo = new ApaiIO($conf);
+
+                    $awnid = $product_asin_no;
+
+                    $lookup = new Lookup();
+                    $lookup->setResponseGroup(array('Offers')); // More detailed information
+                    $lookup->setItemId($uspd_slot);
+                    $lookup->setCondition('All');
+                    $response = $apaiIo->runOperation($lookup);
+                    $response = json_decode (json_encode (simplexml_load_string ($response)), true);
+
+                    $this->pre($response);
+
+                    if(isset($response['Items']['Request']['Errors']['Error']['Message']))
+                    {
+                        $response['Items']['Request']['Errors']['Error']['Message'];
+                    }
+                    else
+                    {
+                        if(isset($response['Items']['Item'][0])){
+                            $us_items = $response['Items']['Item'];
+                            foreach ($us_items as $us_items_key => $us_item)
+                            {
+                                $us_item_totaloffers = (int) $us_item['Offers']['TotalOffers'];
+                                if($us_item_totaloffers <= 0){
+                                    array_push($us_out_of_stock_items, $us_item['ASIN']);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            $us_item = $response['Items']['Item'];
+                            $us_item_totaloffers = (int) $us_item['Offers']['TotalOffers'];
+                            if($us_item_totaloffers <= 0){
+                                array_push($us_out_of_stock_items, $us_item['ASIN']);
+                            }
+                        }
+                    }
+
+                    //$this->pre($response);
+
+                    //echo "<br>";
+                    //echo "________________________________________________________________";   
+                    //echo "<br>";
+
+                }
+
+                $this->pre($us_out_of_stock_items);
+            }
+
+            $uk_products_data = $this->Product->find('all', array('conditions' => array('status IN'=> array('0','1'), 'source_id'=>'2', 'user_id' => $user_id)));
+
+            //$this->pre($uk_products_data);exit;
+
+            if(count($uk_products_data) > 0)
+            {
+                $ukpdIds = array();
+                
+                $uk_out_of_stock_items = array();
+
+                foreach ($uk_products_data as $ukpdkey => $ukpdvalue)
+                {    
+                    array_push($ukpdIds, $ukpdvalue['Product']['asin_no']);
+                }
+
+                $ukpdIds = array_chunk($ukpdIds, 10);
+
+                foreach ($ukpdIds as $ukpd_slotkey => $ukpd_slot)
+                {
+                    $country_cod = 'co.uk';
+                    $siteId = Constants\SiteIds::GB;
+
+                    $client = new \GuzzleHttp\Client();
+                    $request = new \ApaiIO\Request\GuzzleRequest($client);
+
+                    $conf = new GenericConfiguration();
+                    $conf
+                        ->setCountry($country_cod)
+                        ->setAccessKey(AWS_API_KEY)
+                        ->setSecretKey(AWS_API_SECRET_KEY)
+                        ->setAssociateTag(AWS_ASSOCIATE_TAG)
+                        ->setRequest($request);
+
+                    $apaiIo = new ApaiIO($conf);
+
+                    $awnid = $product_asin_no;
+
+                    $lookup = new Lookup();
+                    $lookup->setResponseGroup(array('Offers')); // More detailed information
+                    $lookup->setItemId($ukpd_slot);
+                    $lookup->setCondition('All');
+                    $response = $apaiIo->runOperation($lookup);
+                    $response = json_decode (json_encode (simplexml_load_string ($response)), true);
+
+                    $this->pre($response);
+
+                    if(isset($response['Items']['Request']['Errors']['Error']['Message']))
+                    {
+                        $response['Items']['Request']['Errors']['Error']['Message'];
+                    }
+                    else
+                    {
+                        if(isset($response['Items']['Item'][0])){
+                            $uk_items = $response['Items']['Item'];
+                            foreach ($uk_items as $uk_items_key => $uk_item)
+                            {
+                                $uk_item_totaloffers = (int) $uk_item['Offers']['TotalOffers'];
+                                if($uk_item_totaloffers <= 0){
+                                    array_push($uk_out_of_stock_items, $uk_item['ASIN']);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            $uk_item = $response['Items']['Item'];
+                            $uk_item_totaloffers = (int) $uk_item['Offers']['TotalOffers'];
+                            if($uk_item_totaloffers <= 0){
+                                array_push($uk_out_of_stock_items, $uk_item['ASIN']);
+                            }
+                        }
+                    }
+
+                    //echo "<br>";
+                    //echo "________________________________________________________________";   
+                    //echo "<br>";
+                    
+                }
+
+                $this->pre($uk_out_of_stock_items);
+            }
+
+            exit;
+
             //echo "Feature coming soon...";
             $_SESSION['success_msg'] = "Feature coming soon...!";
             return $this->redirect(DEFAULT_URL.'listings/listing_requests/');
