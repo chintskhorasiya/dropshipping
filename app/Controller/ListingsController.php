@@ -695,6 +695,7 @@ class ListingsController extends AppController {
 
             $size_mens_categories = array('11483','15687', '11484', '57990');
             $mens_bottom_size_categories = array('57989');
+            $womens_bottom_size_categories = array('11554');
             $mens_us_shoe_size_categories = array('24087');
 
             //Item Variations (if available)
@@ -714,6 +715,8 @@ class ListingsController extends AppController {
                         $variations_dimentions_key = "Size (Men's)";
                     }elseif($variations_dimentions_key == "Size" && in_array($primaryCategory, $mens_bottom_size_categories)){
                         $variations_dimentions_key = "Bottoms Size (Men's)";
+                    }elseif($variations_dimentions_key == "Size" && in_array($primaryCategory, $womens_bottom_size_categories)){
+                        $variations_dimentions_key = "Bottoms Size (Women's)";
                     }elseif($variations_dimentions_key == "Size" && in_array($primaryCategory, $mens_us_shoe_size_categories)){
                         $variations_dimentions_key = "US Shoe Size (Men's)";
                     }
@@ -760,6 +763,8 @@ class ListingsController extends AppController {
                                 $var_items_value_value->Name = "Size (Men's)";
                             } elseif($var_items_value_value->Name == "Size" && in_array($primaryCategory, $mens_bottom_size_categories)){
                                 $var_items_value_value->Name = "Bottoms Size (Men's)";
+                            } elseif($var_items_value_value->Name == "Size" && in_array($primaryCategory, $womens_bottom_size_categories)){
+                                $var_items_value_value->Name = "Bottoms Size (Women's)";
                             } elseif($var_items_value_value->Name == "Size" && in_array($primaryCategory, $mens_us_shoe_size_categories)){
                                 $var_items_value_value->Name = "US Shoe Size (Men's)";
                             }
@@ -827,7 +832,7 @@ class ListingsController extends AppController {
 
                     }
 
-                    if(in_array($primaryCategory, $size_mens_categories) || in_array($primaryCategory, $mens_bottom_size_categories) || in_array($primaryCategory, $mens_us_shoe_size_categories)){
+                    if(in_array($primaryCategory, $size_mens_categories) || in_array($primaryCategory, $mens_bottom_size_categories) || in_array($primaryCategory, $womens_bottom_size_categories) || in_array($primaryCategory, $mens_us_shoe_size_categories)){
                         $specific = new Types\NameValueListType();
                         $specific->Name = 'Size Type';
                         $specific->Value[] = 'Regular';
@@ -902,6 +907,8 @@ class ListingsController extends AppController {
                                             $specific->Name = "Size (Men's)";
                                         } elseif($var_items_value_value->Name == "Size" && in_array($primaryCategory, $mens_bottom_size_categories)){
                                             $specific->Name = "Bottoms Size (Men's)";
+                                        } elseif($var_items_value_value->Name == "Size" && in_array($primaryCategory, $womens_bottom_size_categories)){
+                                            $specific->Name = "Bottoms Size (Women's)";
                                         } elseif($var_items_value_value->Name == "Size" && in_array($primaryCategory, $mens_us_shoe_size_categories)){
                                             $specific->Name = "US Shoe Size (Men's)";
                                         }
@@ -916,7 +923,7 @@ class ListingsController extends AppController {
 
                     }
 
-                    if(in_array($primaryCategory, $size_mens_categories) || in_array($primaryCategory, $mens_bottom_size_categories) || in_array($primaryCategory, $mens_us_shoe_size_categories)){
+                    if(in_array($primaryCategory, $size_mens_categories) || in_array($primaryCategory, $mens_bottom_size_categories) || in_array($primaryCategory, $womens_bottom_size_categories) || in_array($primaryCategory, $mens_us_shoe_size_categories)){
                         $specific = new Types\NameValueListType();
                         $specific->Name = 'Size Type';
                         $specific->Value[] = 'Regular';
@@ -1366,6 +1373,7 @@ class ListingsController extends AppController {
                 
                 $size_mens_categories = array('11483','15687', '11484', '57990');
                 $mens_bottom_size_categories = array('57989');
+                $womens_bottom_size_categories = array('11554');
                 $mens_us_shoe_size_categories = array('24087');
 
                 $item->Variations = new Types\VariationsType();
