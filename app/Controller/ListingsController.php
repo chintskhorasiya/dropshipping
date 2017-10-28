@@ -342,8 +342,12 @@ class ListingsController extends AppController {
         $product_data = $this->Product->find('first', array('conditions' => array('user_id'=>$userid,'asin_no'=>$asin_no)));
 
         $this->set('product_data',$product_data);
-        
+
         $product_source_id = $product_data['Product']['source_id'];
+
+        $this->loadmodel('EbaySettings');
+        $ebay_settings_data = $this->EbaySettings->find('first', array('conditions' => array('user_id'=>$userid,'source_id'=>$product_source_id)));
+        $this->set('ebay_settings_data',$ebay_settings_data);
         
         // [[CUSTOM]]
         $this->loadmodel('SourceSettings');
@@ -486,69 +490,136 @@ class ListingsController extends AppController {
 
     }
 
+    function test_ebay_live_account()
+    {
+        $service = new Services\TradingService([
+            'credentials' => [
+
+                        'devId' => EBAY_LIVE_DEVID,
+
+                        'appId' => EBAY_LIVE_APPID,
+
+                        'certId' => EBAY_LIVE_CERTID,
+
+                    ],
+            'siteId'      => Constants\SiteIds::GB
+        ]);
+
+
+        /**
+         * Create the request object.
+         */
+        $request = new Types\GetStoreRequestType();
+        /**
+         * An user token is required when using the Trading service.
+         *
+         * NOTE: eBay will use the token to determine which store to return.
+         */
+        $request->RequesterCredentials = new Types\CustomSecurityHeaderType();
+        $request->RequesterCredentials->eBayAuthToken = EBAY_LIVE_AUTHTOKEN;
+        /**
+         * Send the request.
+         */
+
+        //$this->pre($service);exit;
+
+        $response = $service->getStore($request);
+
+        $this->pre($response);exit;
+
+    }
+
 
 
     function listing_review_approve()
 
     {
 
-        /*echo '<pre>';
-
-        print_r($_POST);
-
-        echo '</pre>';
-
-        exit;*/
-
-
-
         if(isset($_POST['btn_approve']) && $_POST['btn_approve'] == "Approve")
 
         {
 
             $storeId = $_POST['store_id'];
+            $userid = $this->Session->read(md5(SITE_TITLE) . 'USERID');
+
             //$config = require __DIR__.'/configuration.php';
             if($storeId == "2"){
                 $siteId = Constants\SiteIds::GB;
             } else {
                 $siteId = Constants\SiteIds::US;
             }
+
+            $this->loadmodel('EbaySettings');
+            $ebay_settings_data = $this->EbaySettings->find('first', array('conditions' => array('user_id'=>$userid,'source_id'=>$storeId)));
+            
+            //$this->pre($ebay_settings_data);exit;
+
+            $ebay_live = (int) (isset($ebay_settings_data['EbaySettings']['account_type']) ? $ebay_settings_data['EbaySettings']['account_type'] : 0 );
             //var_dump($siteId);exit;
             
-            $service = new Services\TradingService([
+            if($ebay_live)
+            {
+                $service = new Services\TradingService([
 
-                //'credentials' => $config['sandbox']['credentials'],
+                    'credentials' => [
 
-                'credentials' => [
+                        'devId' => EBAY_LIVE_DEVID,
 
-                    'devId' => EBAY_SANDBOX_DEVID,
+                        'appId' => EBAY_LIVE_APPID,
 
-                    'appId' => EBAY_SANDBOX_APPID,
+                        'certId' => EBAY_LIVE_CERTID,
 
-                    'certId' => EBAY_SANDBOX_CERTID,
+                    ],
 
-                ],
+                    'sandbox'     => false,
 
-                'sandbox'     => true,
+                    'siteId'      => $siteId
 
-                'siteId'      => $siteId
+                ]);
 
-            ]);
+                $ebay_auth_token = EBAY_LIVE_AUTHTOKEN;
+
+                //$this->pre($service);exit;
+            }
+            else
+            {
+                $service = new Services\TradingService([
+
+                    //'credentials' => $config['sandbox']['credentials'],
+                    'credentials' => [
+
+                        'devId' => EBAY_SANDBOX_DEVID,
+
+                        'appId' => EBAY_SANDBOX_APPID,
+
+                        'certId' => EBAY_SANDBOX_CERTID,
+
+                    ],
+
+                    'sandbox'     => true,
+
+                    'siteId'      => $siteId
+
+                ]);
+
+                $ebay_auth_token = EBAY_SANDBOX_AUTHTOKEN;
+            }
+
+            //var_dump($ebay_auth_token);exit;
 
             ini_set('magic_quotes_gpc', false);    // magic quotes will only confuse things like escaping apostrophe
 
             //Get the item entered
-
-            $userid = $this->Session->read(md5(SITE_TITLE) . 'USERID');
 
             $this->loadmodel('SourceSettings');
             $source_settings_data = $this->SourceSettings->find('first',array('conditions' => array('source_id' => $storeId, 'user_id' => $userid)));
             $marginpercent = (float)$source_settings_data['SourceSettings']['marginpercent'];
 
             $listingType     = $_POST['listingType'];
-
+            //$this->pre($_POST);exit;
             $primaryACategory = $_POST['primaryACategory'];
-            $primaryCategory = $_POST['primaryCategory'];
+            
+            if(isset($_POST['primaryCategory'])) $primaryCategory = $_POST['primaryCategory'];
 
             $itemTitle       = $_POST['title'];
 
@@ -651,7 +722,7 @@ class ListingsController extends AppController {
 
             $request->RequesterCredentials = new Types\CustomSecurityHeaderType();
 
-            $request->RequesterCredentials->eBayAuthToken = EBAY_SANDBOX_AUTHTOKEN;
+            $request->RequesterCredentials->eBayAuthToken = $ebay_auth_token;
 
             /**
 
@@ -973,6 +1044,7 @@ class ListingsController extends AppController {
                 $item->Country = 'GB';
                 $item->Location = 'London';
                 $item->Currency = 'GBP';
+                //$item->EAN = "4009803041186";
             } else {
                 $item->Country = 'US';
                 $item->Location = 'Beverly Hills';
@@ -1003,7 +1075,7 @@ class ListingsController extends AppController {
 
             $request->Item = $item;
 
-
+            //$this->pre($service);exit;
 
             /**
 

@@ -46,8 +46,8 @@ class TradingBaseService extends \DTS\eBaySDK\Services\BaseService
      */
     public function __construct(array $config)
     {
-//        parent::__construct('https://api.ebay.com/ws/api.dll', 'https://api.sandbox.ebay.com/ws/api.dll', $config);
-        parent::__construct('https://api.sandbox.ebay.com/ws/api.dll', 'https://api.sandbox.ebay.com/ws/api.dll', $config);
+        parent::__construct('https://api.ebay.com/ws/api.dll', 'https://api.sandbox.ebay.com/ws/api.dll', $config);
+        //parent::__construct('https://api.sandbox.ebay.com/ws/api.dll', 'https://api.sandbox.ebay.com/ws/api.dll', $config);
 
     }
 

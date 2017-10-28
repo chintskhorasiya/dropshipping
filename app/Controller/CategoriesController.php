@@ -101,6 +101,11 @@ class CategoriesController extends AppController {
             $root_categories_data = $this->Categories->find('list',array('fields'=>array('Categories.id', 'Categories.name'),'conditions' => array('parent' => 0, 'sourceid' => $combine_data['SourceSetting']['source_id']), 'order' => array('Categories.name' => 'ASC')));
             $this->set('root_categories_data',$root_categories_data);
 
+            $this->loadmodel('EbaySettings');
+            $ebay_settings_data = $this->EbaySettings->find('first', array('conditions' => array('user_id'=>$userid,'source_id'=>$combine_data['SourceSetting']['source_id'])));
+
+            $this->set('ebay_settings_data',$ebay_settings_data);
+
             $this->render('categories_mapping');
         }
     }

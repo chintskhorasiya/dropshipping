@@ -566,17 +566,36 @@
                                         </div>
                                         <?php
                                     } else {
-                                            //define('EBAY_SANDBOX_APPID', 'ChintanS-SeawindS-SBX-b8e35c535-d9f84471');
-                                        
+
+                                            $ebay_live = (int) (isset($ebay_settings_data['EbaySettings']['account_type']) ? $ebay_settings_data['EbaySettings']['account_type'] : 0 );
+                                            if($ebay_live)
+                                            {
+                                                $endpoint = 'http://open.api.ebay.com/Shopping';  // URL to call
+                                                $ebay_app_id = EBAY_LIVE_APPID;
+                                            
+                                            }
+                                            else
+                                            {
+                                                $endpoint = 'http://open.api.sandbox.ebay.com/Shopping';  // URL to call
+                                                $ebay_app_id = EBAY_SANDBOX_APPID;
+                                            }
+
                                             $browse = '';
-                                            $endpoint = 'http://open.api.sandbox.ebay.com/Shopping';  // URL to call
                                             $responseEncoding = 'XML';   // Format of the response
 
-                                            $siteID  = 0; //0-US,77-DE
+                                            if(isset($product_source_id) && $product_source_id=='0'){
+                                                $siteID  = 0; //0-US,77-DE
+                                            } else {
+                                                $siteID  = 3; //0-US,77-DE
+                                            }
+                                            //$siteID  = 0; //0-US,77-DE
+
+                                            echo '<input type="hidden" name="fcat_siteid" id="fcat_siteid" value="'.$siteID.'">';
+                                            echo '<input type="hidden" name="fcat_live" id="fcat_live" value="'.$ebay_live.'">';
 
                                             // Construct the FindItems call
                                             $apicall = "$endpoint?callname=GetCategoryInfo"
-                                                 . "&appid=".EBAY_SANDBOX_APPID
+                                                 . "&appid=".$ebay_app_id
                                                  . "&siteid=$siteID"
                                                  . "&CategoryID=-1"
                                                  . "&version=677"
@@ -654,7 +673,9 @@
                                                 $('#fcat').change(function(){
                                                     //alert($('#fcat').val());
                                                     var catId = $('#fcat').val();
-                                                    $.get('<?php echo DEFAULT_URL ?>getCategoriesInfo.php?catId='+catId, function(response,status){
+                                                    var siteId = $('#fcat_siteid').val();
+                                                    var siteLive = $('#fcat_live').val();
+                                                    $.get('<?php echo DEFAULT_URL ?>getCategoriesInfo.php?catId='+catId+'&siteId='+siteId+'&siteLive='+siteLive, function(response,status){
                                                         console.log(response);
                                                         if(status=='success'){
                                                             //console.log(response);

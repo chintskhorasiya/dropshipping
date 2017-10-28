@@ -10,16 +10,25 @@ require_once "vendor/autoload.php";
 
 //define('EBAY_SANDBOX_APPID', 'ChintanS-SeawindS-SBX-b8e35c535-d9f84471');
 
-$endpoint = 'http://open.api.sandbox.ebay.com/Shopping';  // URL to call
 $responseEncoding = 'XML';   // Format of the response
 $categoryID = $_GET['catId'];
-
-$siteID  = 0; //0-US,77-DE
+$siteId = (int) $_GET['siteId'];
+//var_dump($siteId);
+$siteLive = (int) $_GET['siteLive'];
+//var_dump($siteLive);
+if($siteLive){
+    $ebay_app_id = EBAY_LIVE_APPID;
+    $endpoint = 'http://open.api.ebay.com/Shopping';  // URL to call
+} else {
+    $ebay_app_id = EBAY_SANDBOX_APPID;
+    $endpoint = 'http://open.api.sandbox.ebay.com/Shopping';  // URL to call
+}
+//$siteID  = 0; //0-US,77-DE
 
 // Construct the FindItems call
 $apicall = "$endpoint?callname=GetCategoryInfo"
-     . "&appid=".EBAY_SANDBOX_APPID
-     . "&siteid=$siteID"
+     . "&appid=$ebay_app_id"
+     . "&siteid=$siteId"
      . "&CategoryID=$categoryID"
      . "&version=677"
      . "&responseencoding=$responseEncoding"
@@ -89,8 +98,9 @@ $(document).ready(function(){
     var counter = <?php echo $i; ?>;
     $('#subcat_'+counter).change(function(){
         var catId = $('#subcat_'+counter).val();
-
-        $.get('<?php echo DEFAULT_URL ?>getCategoriesInfo.php?counter='+counter+'&catId='+catId, function(response,status){
+        var siteId = $('#fcat_siteid').val();
+        var siteLive = $('#fcat_live').val();
+        $.get('<?php echo DEFAULT_URL ?>getCategoriesInfo.php?counter='+counter+'&catId='+catId+'&siteId='+siteId+'&siteLive='+siteLive, function(response,status){
             if(status =='success'){
                 //alert(response);
                 //$('span.subcat_'+counter).html(response);

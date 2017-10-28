@@ -13,6 +13,9 @@
             <div class="row">
                 <div class="col-lg-12">
                     <?php echo $this->Session->flash('mapping'); ?>
+                    <?php
+                    $ebay_live = (int) (isset($ebay_settings_data['EbaySettings']['account_type']) ? $ebay_settings_data['EbaySettings']['account_type'] : 0 );
+                    ?>
                     <h1>Categories Mapping</h1>
                     <section class="panel">
                         <header class="panel-heading btn-primary"></header>
@@ -44,7 +47,18 @@
                                     <?php
                                     
                                         $browse = '';
-                                        $endpoint = 'http://open.api.sandbox.ebay.com/Shopping';  // URL to call
+                                        if($ebay_live)
+                                        {
+                                            $endpoint = 'http://open.api.ebay.com/Shopping';  // URL to call
+                                            $ebay_app_id = EBAY_LIVE_APPID;
+                                        
+                                        }
+                                        else
+                                        {
+                                            $endpoint = 'http://open.api.sandbox.ebay.com/Shopping';  // URL to call
+                                            $ebay_app_id = EBAY_SANDBOX_APPID;
+                                        }
+                                        //var_dump($endpoint);
                                         $responseEncoding = 'XML';   // Format of the response
 
                                         if(isset($this->params['named']['type']) && $this->params['named']['type']=='amazon-us'){
@@ -53,9 +67,12 @@
                                             $siteID  = 3; //0-US,77-DE
                                         }
 
+                                        echo '<input type="hidden" name="fcat_siteid" id="fcat_siteid" value="'.$siteID.'">';
+                                        echo '<input type="hidden" name="fcat_live" id="fcat_live" value="'.$ebay_live.'">';
+
                                         // Construct the FindItems call
                                         $apicall = "$endpoint?callname=GetCategoryInfo"
-                                             . "&appid=".EBAY_SANDBOX_APPID
+                                             . "&appid=".$ebay_app_id
                                              . "&siteid=$siteID"
                                              . "&CategoryID=-1"
                                              . "&version=677"
@@ -136,8 +153,10 @@
             console.log($(this));
             //alert($('#fcat').val());
             var catId = $('#fcat').val();
+            var siteId = $('#fcat_siteid').val();
+            var siteLive = $('#fcat_live').val();
             //var catName = $('option:selected', this).attr('data-name');
-            $.get('<?php echo DEFAULT_URL ?>getCategoriesInfo.php?catId='+catId, function(response,status){
+            $.get('<?php echo DEFAULT_URL ?>getCategoriesInfo.php?catId='+catId+'&siteId='+siteId+'&siteLive='+siteLive, function(response,status){
                 console.log(response);
                 if(status=='success'){
                     //console.log(response);
