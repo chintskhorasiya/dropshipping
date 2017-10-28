@@ -56,6 +56,12 @@
                             <li><a href="<?php echo DEFAULT_URL ?>listings/manage_blacklists/<?php echo $encrypt_id;?>"><i class="fa fa-eye"></i>Manage Listing Blacklists</a></li>
                         </ul>
                     </li>
+                    <li class="sub-menu"> <a href="javascript:void(0);"> <i class="fa fa-tags"></i> <span>Ebay Settings</span> </a>
+                        <ul class="sub">
+                            <li><a href="<?php echo DEFAULT_URL ?>ebay/ebay_settings/type:us/<?php echo $encrypt_id;?>"><i class="fa fa-eye"></i>Ebay US</a></li>
+                            <li><a href="<?php echo DEFAULT_URL ?>ebay/ebay_settings/type:uk/<?php echo $encrypt_id;?>"><i class="fa fa-eye"></i>Ebay UK</a></li>
+                        </ul>
+                    </li>
                     <?php /* */ ?>
                     <!--<li class="sub-menu"> <a href="javascript:void(0);"> <i class="fa fa-tags"></i> <span>Current Listings</span> </a>
                         <ul class="sub">
