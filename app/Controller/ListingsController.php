@@ -1045,6 +1045,9 @@ class ListingsController extends AppController {
                 $item->Location = 'London';
                 $item->Currency = 'GBP';
                 //$item->EAN = "4009803041186";
+                $productDetails = new Types\ProductListingDetailsType();
+                $productDetails->EAN = 'NA';
+                $item->ProductListingDetails = $productDetails;
             } else {
                 $item->Country = 'US';
                 $item->Location = 'Beverly Hills';
@@ -1063,7 +1066,8 @@ class ListingsController extends AppController {
 
             $item->ReturnPolicy = new Types\ReturnPolicyType();
 
-            $item->ReturnPolicy->ReturnsAcceptedOption = 'ReturnsNotAccepted';
+            //$item->ReturnPolicy->ReturnsAcceptedOption = 'ReturnsNotAccepted';
+            $item->ReturnPolicy->ReturnsAcceptedOption = 'ReturnsAccepted';
 
             //$this->pre($item);exit;
 
