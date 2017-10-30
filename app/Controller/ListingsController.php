@@ -845,6 +845,13 @@ class ListingsController extends AppController {
                             $variationSpecifics->NameValueList[] = $nameValue;
                         }
 
+                        if($storeId == "2")
+                        {
+                            $productDetails = new Types\VariationProductListingDetailsType();
+                            $productDetails->EAN = 'NA';
+                            $variation->VariationProductListingDetails = $productDetails;
+                        }
+
                         $variation->VariationSpecifics[] = $variationSpecifics;
                         $item->Variations->Variation[] = $variation;
                     }
@@ -1184,6 +1191,15 @@ class ListingsController extends AppController {
 
                     $this->Product->saveField('ebay_id', $response->ItemID);
                     $this->Product->saveField('ebay_price', $startPrice);
+                    $this->Product->saveField('ebay_cat_id', $item->PrimaryCategory->CategoryID);
+                    if(!empty($variations_dimentions) && $withVariations)
+                    {
+                        $this->Product->saveField('with_variations', 1);
+                    }
+                    if($ebay_live)
+                    {
+                        $this->Product->saveField('ebay_live', 1);
+                    }
 
                 }
 
@@ -1239,6 +1255,9 @@ class ListingsController extends AppController {
         $product_ebay_id = $product_data['Product']['ebay_id'];
         $product_a_cat_id = $product_data['Product']['a_cat_id'];
         $product_variations_dimentions = $product_data['Product']['variations_dimentions'];
+        $product_ebay_live = $product_data['Product']['ebay_live'];
+        $product_ebay_cat_id = $product_data['Product']['ebay_cat_id'];
+        $product_ebay_with_variations = $product_data['Product']['with_variations'];
 
         $country_cod = 'com';
         $siteId = Constants\SiteIds::US;
@@ -1265,8 +1284,10 @@ class ListingsController extends AppController {
         $awnid = $product_asin_no;
 
         $lookup = new Lookup();
+        //$lookup->setResponseGroup(array('Offers,VariationMatrix,VariationOffers')); // More detailed information
         $lookup->setResponseGroup(array('Offers')); // More detailed information
         $lookup->setItemId($awnid);
+        //$lookup->setItemId('B00UG7WDQ6');
         $lookup->setCondition('All');
         $response = $apaiIo->runOperation($lookup);
         $response = json_decode (json_encode (simplexml_load_string ($response)), true);
@@ -1295,7 +1316,11 @@ class ListingsController extends AppController {
         $this->loadmodel('CategoriesMappings');
         $categories_mappings_data = $this->CategoriesMappings->find('first',array('conditions' => array('source_id' => $product_source_id, 'user_id' => $userid, 'a_cat_id' => $product_a_cat_id)));
 
-        $primaryCategory = $categories_mappings_data['CategoriesMappings']['e_cat_id'];
+        if(!empty($product_ebay_cat_id)){
+            $primaryCategory = $product_ebay_cat_id;
+        }else{
+            $primaryCategory = $categories_mappings_data['CategoriesMappings']['e_cat_id'];
+        }
         
         $def_qty = (int) (!empty($source_settings_data['SourceSettings']['quantity']) ? $source_settings_data['SourceSettings']['quantity'] : 1);
 
@@ -1319,18 +1344,19 @@ class ListingsController extends AppController {
 
         if(!empty($product_variations_dimentions))
         {
-            $TotalVariations = (int)$response['Items']['Item']['Variations']['TotalVariations'];
-
-            if(isset($response['Items']['Item']['Variations']) && $TotalVariations > 0)
+            if(isset($response['Items']['Item']['Variations']))
             {
-                $ProductVariations = $response['Items']['Item']['Variations'];
+                $TotalVariations = (int)$response['Items']['Item']['Variations']['TotalVariations'];
+                if($TotalVariations > 0){
+                    $ProductVariations = $response['Items']['Item']['Variations'];
+                }
             }
             else
             {
                 $ParentASIN = $response['Items']['Item']['ParentASIN'];
                 $lookup = new Lookup();
                 $lookup->setIdType('ASIN');
-                $lookup->setResponseGroup(array('VariationOffers', 'VariationMatrix')); // More detailed information
+                $lookup->setResponseGroup(array('Variations', 'VariationOffers', 'VariationMatrix')); // More detailed information
                 $lookup->setItemId($ParentASIN);
                 $lookup->setCondition('All');
                 $var_response = $apaiIo->runOperation($lookup);
@@ -1358,6 +1384,8 @@ class ListingsController extends AppController {
                
                foreach ($ProductVariations['Item'] as $pvItemKey => $pvItemValue)
                {
+                    //$this->pre($pvItemValue);
+
                     //var_dump($pvItemValue['VariationAttributes']['VariationAttribute']);exit;
                     if(isset($pvItemValue['VariationAttributes']['VariationAttribute'][0]) && is_array($pvItemValue['VariationAttributes']['VariationAttribute'][0]))
                     {
@@ -1371,7 +1399,7 @@ class ListingsController extends AppController {
                    $add_product_array['variations_items'][$pvItemKey]['sku'] = $def_sku_prefix.$pvItemValue['ASIN'];
                    $add_product_array['variations_items'][$pvItemKey]['qty'] = $def_qty;
                    
-                   $variation_list_amount = $pvItemValue['ItemAttributes']['ListPrice']['Amount'];
+                   $variation_list_amount = (isset($pvItemValue['ItemAttributes']['ListPrice']['Amount']) ? $pvItemValue['ItemAttributes']['ListPrice']['Amount'] : 0 );
                    $variation_offer_amount = $pvItemValue['Offers']['Offer']['OfferListing']['Price']['Amount'];
 
                    if(empty($variation_offer_amount)){
@@ -1394,7 +1422,7 @@ class ListingsController extends AppController {
 
                         $this->Product->saveField('variations_items', $add_product_array['variations_items']);
 
-                        $product_variations_need_revise = true;
+                        if($product_ebay_with_variations) $product_variations_need_revise = true;
                         //print("The item was successfully revised on the eBay Sandbox.");
                     }    
                }
@@ -1402,17 +1430,41 @@ class ListingsController extends AppController {
 
         }
 
+        //$price = (float) 15;
+
+        //var_dump($product_ebay_price);
+        //var_dump($price);exit;
+        
         if($product_ebay_price < $price)
         {
-            $service = new Services\TradingService([
-                'credentials' => [
-                    'devId' => EBAY_SANDBOX_DEVID,
-                    'appId' => EBAY_SANDBOX_APPID,
-                    'certId' => EBAY_SANDBOX_CERTID,
-                ],
-                'sandbox'     => true,
-                'siteId'      => $siteId
-            ]);
+            if($product_ebay_live)
+            {
+                $service = new Services\TradingService([
+                    'credentials' => [
+                        'devId' => EBAY_LIVE_DEVID,
+                        'appId' => EBAY_LIVE_APPID,
+                        'certId' => EBAY_LIVE_CERTID,
+                    ],
+                    'sandbox'     => false,
+                    'siteId'      => $siteId
+                ]);
+
+                $ebay_auth_token = EBAY_LIVE_AUTHTOKEN;
+            }
+            else
+            {
+                $service = new Services\TradingService([
+                    'credentials' => [
+                        'devId' => EBAY_SANDBOX_DEVID,
+                        'appId' => EBAY_SANDBOX_APPID,
+                        'certId' => EBAY_SANDBOX_CERTID,
+                    ],
+                    'sandbox'     => true,
+                    'siteId'      => $siteId
+                ]);
+
+                $ebay_auth_token = EBAY_SANDBOX_AUTHTOKEN;
+            }
 
             /**
              * Create the request object.
@@ -1423,7 +1475,7 @@ class ListingsController extends AppController {
              * An user token is required when using the Trading service.
              */
             $request->RequesterCredentials = new Types\CustomSecurityHeaderType();
-            $request->RequesterCredentials->eBayAuthToken = EBAY_SANDBOX_AUTHTOKEN;
+            $request->RequesterCredentials->eBayAuthToken = $ebay_auth_token;
 
             /**
              * Begin creating the fixed price item.

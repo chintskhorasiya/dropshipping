@@ -690,6 +690,7 @@
                                                 <input type="hidden" name="asin_no" id="asin_no" value="<?php echo $product_data['Product']['asin_no']; ?>">
                                                 <input type="hidden" name="sku" id="sku" value="<?php echo $product_data['Product']['sku']; ?>">
                                                  <input type="hidden" name="productId" id="productId" value="<?php echo $product_data['Product']['id']; ?>">
+                                                 <input type="hidden" name="primaryACategory" id="primaryACategory" value="<?php echo $product_data['Product']['a_cat_id'] ?>">
                                                 <input type="hidden" name="return_url" id="return_url" value="<?php echo DEFAULT_URL.'listings/listing_review/'.$product_data['Product']['asin_no']; ?>">
                                                 <input class="btn btn-info pull-left" type="submit" name="btn_reject" id="btn_reject" value="Reject" />
                                                 <input class="btn btn-info pull-right disabled" type="submit" name="btn_approve" id="btn_approve" value="Approve" />
