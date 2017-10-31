@@ -306,7 +306,7 @@ class ListingsController extends AppController {
 
 
 
-        $product_data = $this->Product->find('all', array('conditions' => array('user_id'=>$userid)));
+        $product_data = $this->Product->find('all', array('conditions' => array('user_id'=>$userid, 'status IN'=> array(0,1))));
 
         $this->set('product_data',$product_data);
         //$this->set('user_encryptid',$user_encryptid);
@@ -850,6 +850,10 @@ class ListingsController extends AppController {
                             $productDetails = new Types\VariationProductListingDetailsType();
                             $productDetails->EAN = 'NA';
                             $variation->VariationProductListingDetails = $productDetails;
+                        } else {
+                            $productDetails = new Types\VariationProductListingDetailsType();
+                            $productDetails->UPC = 'NA';
+                            $variation->VariationProductListingDetails = $productDetails;                            
                         }
 
                         $variation->VariationSpecifics[] = $variationSpecifics;
@@ -953,6 +957,10 @@ class ListingsController extends AppController {
 
                             $styleSpecArr = explode(",", $itemSpecificationsValsArr[$iscKey]);
                             $itemSpecificationsValsArr[$iscKey] = $styleSpecArr[0];
+                        }
+
+                        if($item_key == "UPC" && !empty($itemSpecificationsValsArr[$iscKey]) && $storeId == "1"){
+                            $item_upc_value = $itemSpecificationsValsArr[$iscKey];
                         }
 
                         $specific->Name = $item_key;
@@ -1059,6 +1067,10 @@ class ListingsController extends AppController {
                 $item->Country = 'US';
                 $item->Location = 'Beverly Hills';
                 $item->Currency = 'USD';
+
+                $productDetails = new Types\ProductListingDetailsType();
+                if(!empty($item_upc_value)) { $productDetails->UPC = $item_upc_value; } else { $productDetails->UPC = 'NA'; }
+                $item->ProductListingDetails = $productDetails;
             }
 
             $item->ConditionID = (int)$itemCondition;

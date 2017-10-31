@@ -93,6 +93,9 @@ class ProductsController extends AppController {
             {
                 $uspdIds = array();
                 $us_out_of_stock_items = array();
+
+                //array_push($uspdIds, 'B0745532Y9');
+                
                 foreach ($us_products_data as $uspdkey => $uspdvalue)
                 {    
                     array_push($uspdIds, $uspdvalue['Product']['asin_no']);
@@ -123,12 +126,13 @@ class ProductsController extends AppController {
 
                     $apaiIo = new ApaiIO($conf);
 
-                    $awnid = $product_asin_no;
+                    //$awnid = $product_asin_no;
 
                     $lookup = new Lookup();
                     $lookup->setResponseGroup(array('Offers')); // More detailed information
                     $lookup->setItemId($uspd_slot);
                     $lookup->setCondition('All');
+                    $lookup->setMerchantId('All');
                     $response = $apaiIo->runOperation($lookup);
                     $response = json_decode (json_encode (simplexml_load_string ($response)), true);
 
@@ -206,7 +210,7 @@ class ProductsController extends AppController {
 
                     $apaiIo = new ApaiIO($conf);
 
-                    $awnid = $product_asin_no;
+                    //$awnid = $product_asin_no;
 
                     $lookup = new Lookup();
                     $lookup->setResponseGroup(array('Offers')); // More detailed information
@@ -271,145 +275,175 @@ class ProductsController extends AppController {
             $product_ebay_id = $product_data['Product']['ebay_id'];
             $product_ebay_sku = $product_data['Product']['sku'];
             $product_a_cat_id = $product_data['Product']['a_cat_id'];
+            $product_ebay_cat_id = $product_data['Product']['ebay_cat_id'];
             $product_ebay_qty = (int) $product_data['Product']['qty'];
+            $product_ebay_live = (int) $product_data['Product']['ebay_live'];
+            $product_ebay_with_variations = (int) $product_data['Product']['with_variations'];
             $product_variations_dimentions = $product_data['Product']['variations_dimentions'];
 
-            $country_cod = 'com';
-            $siteId = Constants\SiteIds::US;
-            if(isset($product_source_id) && $product_source_id==2)
+            if(!empty($product_ebay_id))
             {
-                $country_cod = 'co.uk';
-                $siteId = Constants\SiteIds::GB;
-            }
+                $country_cod = 'com';
+                $siteId = Constants\SiteIds::US;
+                if(isset($product_source_id) && $product_source_id==2)
+                {
+                    $country_cod = 'co.uk';
+                    $siteId = Constants\SiteIds::GB;
+                }
 
-            $client = new \GuzzleHttp\Client();
-            $request = new \ApaiIO\Request\GuzzleRequest($client);
+                $client = new \GuzzleHttp\Client();
+                $request = new \ApaiIO\Request\GuzzleRequest($client);
 
-            $conf = new GenericConfiguration();
-            $conf
-                ->setCountry($country_cod)
-                ->setAccessKey(AWS_API_KEY)
-                ->setSecretKey(AWS_API_SECRET_KEY)
-                ->setAssociateTag(AWS_ASSOCIATE_TAG)
-                ->setRequest($request);
+                $conf = new GenericConfiguration();
+                $conf
+                    ->setCountry($country_cod)
+                    ->setAccessKey(AWS_API_KEY)
+                    ->setSecretKey(AWS_API_SECRET_KEY)
+                    ->setAssociateTag(AWS_ASSOCIATE_TAG)
+                    ->setRequest($request);
 
-            $apaiIo = new ApaiIO($conf);
+                $apaiIo = new ApaiIO($conf);
 
-            $awnid = $product_asin_no;
+                $awnid = $product_asin_no;
 
-            $lookup = new Lookup();
-            $lookup->setResponseGroup(array('Offers')); // More detailed information
-            $lookup->setItemId($awnid);
-            $lookup->setCondition('All');
-            $response = $apaiIo->runOperation($lookup);
-            $response = json_decode (json_encode (simplexml_load_string ($response)), true);
+                $lookup = new Lookup();
+                $lookup->setResponseGroup(array('Offers')); // More detailed information
+                $lookup->setItemId($awnid);
+                $lookup->setCondition('All');
+                $response = $apaiIo->runOperation($lookup);
+                $response = json_decode (json_encode (simplexml_load_string ($response)), true);
 
-            //$this->pre($response);exit;
+                //$this->pre($response);exit;
 
-            $totalOffers = (int) $response['Items']['Item']['Offers']['TotalOffers'];
-        
-            if($totalOffers > 0)
-            {
+                $totalOffers = (int) $response['Items']['Item']['Offers']['TotalOffers'];
 
-                $_SESSION['success_msg'] = "Item is still available !";
-                return $this->redirect(DEFAULT_URL.'listings/listing_requests/');
+                //var_dump($totalOffers);exit;
+            
+                if($totalOffers > 0)
+                {
+
+                    $_SESSION['success_msg'] = "Item is still available !";
+                    return $this->redirect(DEFAULT_URL.'listings/listing_requests/');
+                }
+                else
+                {
+                    if($product_ebay_qty === 0)
+                    {
+                        $_SESSION['success_msg'] = "Item is already out of stock !";
+                        return $this->redirect(DEFAULT_URL.'listings/listing_requests/');
+                    }
+
+                    if($product_ebay_live)
+                    {
+                        $service = new Services\TradingService([
+                            'credentials' => [
+                                'devId' => EBAY_LIVE_DEVID,
+                                'appId' => EBAY_LIVE_APPID,
+                                'certId' => EBAY_LIVE_CERTID,
+                            ],
+                            'sandbox'     => false,
+                            'siteId'      => $siteId
+                        ]);
+
+                        $ebay_auth_token = EBAY_LIVE_AUTHTOKEN;
+                    }
+                    else
+                    {
+                        $service = new Services\TradingService([
+                            'credentials' => [
+                                'devId' => EBAY_SANDBOX_DEVID,
+                                'appId' => EBAY_SANDBOX_APPID,
+                                'certId' => EBAY_SANDBOX_CERTID,
+                            ],
+                            'sandbox'     => true,
+                            'siteId'      => $siteId
+                        ]);
+
+                        $ebay_auth_token = EBAY_SANDBOX_AUTHTOKEN;
+                    }
+
+                    // code for enabling out of stock feature
+
+                    /*$requestS = new Types\SetUserPreferencesRequestType();
+                    $requestS->RequesterCredentials = new Types\CustomSecurityHeaderType();
+                    $requestS->RequesterCredentials->eBayAuthToken = EBAY_SANDBOX_AUTHTOKEN;
+                    $requestS->OutOfStockControlPreference = true;
+                    $responseS = $service->SetUserPreferences($requestS);*/
+                    
+                    // code to get out of stock feature value (enabled or not)
+                    /*$requestG = new Types\GetUserPreferencesRequestType();
+                    $requestG->RequesterCredentials = new Types\CustomSecurityHeaderType();
+                    $requestG->RequesterCredentials->eBayAuthToken = EBAY_SANDBOX_AUTHTOKEN;
+                    $requestG->ShowOutOfStockControlPreference = true;
+                    $response = $service->GetUserPreferences($requestG);*/
+
+                    /**
+                     * Create the request object.
+                     */
+                    $request = new Types\ReviseInventoryStatusRequestType();
+
+                    $request->RequesterCredentials = new Types\CustomSecurityHeaderType();
+                    $request->RequesterCredentials->eBayAuthToken = $ebay_auth_token;
+                    
+                    $inventory = new Types\InventoryStatusType();
+                    $inventory->ItemID = $product_ebay_id;
+                    //$inventory->SKU = $product_ebay_sku;
+                    $inventory->Quantity = 0;
+                    //$inventory->StartPrice = new Types\AmountType(array('value' => (float)4.95));
+                    $request->InventoryStatus[] = $inventory;
+                    $response = $service->ReviseInventoryStatus($request);
+                    //$response = $service->reviseFixedPriceItem($request);
+                    //$this->pre($response);exit;
+
+                    /**
+                     * Output the result of calling the service operation.
+                     */
+                    if (isset($response->Errors)) {
+                        foreach ($response->Errors as $error) {
+                            
+                            if($error->SeverityCode === 'Warning'){
+
+                                $_SESSION['warning_msg'] = sprintf(
+
+                                    "%s: %s\n%s\n\n",
+                                    $error->SeverityCode === Enums\SeverityCodeType::C_ERROR ? 'Error' : 'Warning',
+                                    $error->ShortMessage,
+                                    $error->LongMessage
+                                );
+
+
+                            } else {
+
+                                $_SESSION['error_msg'] = sprintf(
+                                    "%s: %s\n%s\n\n",
+                                    $error->SeverityCode === Enums\SeverityCodeType::C_ERROR ? 'Error' : 'Warning',
+                                    $error->ShortMessage,
+                                    $error->LongMessage
+                                );
+
+                            }
+                        }
+                    }
+                    if ($response->Ack !== 'Failure') {
+
+                        $_SESSION['success_msg'] = "Item is out of stock now ! And The item was successfully revised on the eBay Sandbox.";
+
+                        $this->Product->id = $this->Product->field('id', array('id' => $productId));
+
+                        if ($this->Product->id) {
+
+                            $this->Product->saveField('qty', 0);
+                        }
+                    
+                    }
+
+                    return $this->redirect(DEFAULT_URL.'listings/listing_requests/');
+                }
             }
             else
             {
-                if($product_ebay_qty === 0)
-                {
-                    $_SESSION['success_msg'] = "Item is already out of stock !";
-                    return $this->redirect(DEFAULT_URL.'listings/listing_requests/');
-                }
-
-                $service = new Services\TradingService([
-                    'credentials' => [
-                        'devId' => EBAY_SANDBOX_DEVID,
-                        'appId' => EBAY_SANDBOX_APPID,
-                        'certId' => EBAY_SANDBOX_CERTID,
-                    ],
-                    'sandbox'     => true,
-                    'siteId'      => $siteId
-                ]);
-
-                // code for enabling out of stock feature
-
-                /*$requestS = new Types\SetUserPreferencesRequestType();
-                $requestS->RequesterCredentials = new Types\CustomSecurityHeaderType();
-                $requestS->RequesterCredentials->eBayAuthToken = EBAY_SANDBOX_AUTHTOKEN;
-                $requestS->OutOfStockControlPreference = true;
-                $responseS = $service->SetUserPreferences($requestS);*/
-                
-                // code to get out of stock feature value (enabled or not)
-                /*$requestG = new Types\GetUserPreferencesRequestType();
-                $requestG->RequesterCredentials = new Types\CustomSecurityHeaderType();
-                $requestG->RequesterCredentials->eBayAuthToken = EBAY_SANDBOX_AUTHTOKEN;
-                $requestG->ShowOutOfStockControlPreference = true;
-                $response = $service->GetUserPreferences($requestG);*/
-
-                /**
-                 * Create the request object.
-                 */
-                $request = new Types\ReviseInventoryStatusRequestType();
-
-                $request->RequesterCredentials = new Types\CustomSecurityHeaderType();
-                $request->RequesterCredentials->eBayAuthToken = EBAY_SANDBOX_AUTHTOKEN;
-                
-                $inventory = new Types\InventoryStatusType();
-                $inventory->ItemID = $product_ebay_id;
-                //$inventory->SKU = $product_ebay_sku;
-                $inventory->Quantity = 0;
-                //$inventory->StartPrice = new Types\AmountType(array('value' => (float)4.95));
-                $request->InventoryStatus[] = $inventory;
-                $response = $service->ReviseInventoryStatus($request);
-                //$response = $service->reviseFixedPriceItem($request);
-                //$this->pre($response);exit;
-
-                /**
-                 * Output the result of calling the service operation.
-                 */
-                if (isset($response->Errors)) {
-                    foreach ($response->Errors as $error) {
-                        
-                        if($error->SeverityCode === 'Warning'){
-
-                            $_SESSION['warning_msg'] = sprintf(
-
-                                "%s: %s\n%s\n\n",
-                                $error->SeverityCode === Enums\SeverityCodeType::C_ERROR ? 'Error' : 'Warning',
-                                $error->ShortMessage,
-                                $error->LongMessage
-                            );
-
-
-                        } else {
-
-                            $_SESSION['error_msg'] = sprintf(
-                                "%s: %s\n%s\n\n",
-                                $error->SeverityCode === Enums\SeverityCodeType::C_ERROR ? 'Error' : 'Warning',
-                                $error->ShortMessage,
-                                $error->LongMessage
-                            );
-
-                        }
-                    }
-                }
-                if ($response->Ack !== 'Failure') {
-
-                    $_SESSION['success_msg'] = "Item is out of stock now ! And The item was successfully revised on the eBay Sandbox.";
-
-                    $this->Product->id = $this->Product->field('id', array('id' => $productId));
-
-                    if ($this->Product->id) {
-
-                        $this->Product->saveField('qty', 0);
-                    }
-                
-                }
-
                 return $this->redirect(DEFAULT_URL.'listings/listing_requests/');
             }
-
             
         }
 
