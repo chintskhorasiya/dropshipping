@@ -1169,13 +1169,38 @@ class ListingsController extends AppController {
 
                 //echo '<div class="alert alert-success">';
 
-                $_SESSION['success_msg'] = sprintf(
+                if($ebay_live) {
+                    
+                    if($storeId == "2")
+                    {
+                        $_SESSION['success_msg'] = sprintf(
 
-                    "The item was listed to the eBay Sandbox with the Item number %s\n",
+                            "The item was listed to the eBay with the Item number %s\n",
 
-                    $response->ItemID
+                            "<a target=\"_blank\" href=\"http://www.ebay.co.uk/itm/".$response->ItemID."\">".$response->ItemID."</a>"
 
-                );
+                        );
+                    }
+                    else
+                    {
+                        $_SESSION['success_msg'] = sprintf(
+
+                            "The item was listed to the eBay with the Item number %s\n",
+
+                            "<a target=\"_blank\" href=\"http://www.ebay.com/itm/".$response->ItemID."\">".$response->ItemID."</a>"
+
+                        );
+                    }
+
+                } else {
+                    $_SESSION['success_msg'] = sprintf(
+
+                        "The item was listed to the eBay Sandbox with the Item number %s\n",
+
+                        "<a target=\"_blank\" href=\"http://cgi.sandbox.ebay.com/".$response->ItemID."\">".$response->ItemID."</a>"
+
+                    );
+                }
 
 
 

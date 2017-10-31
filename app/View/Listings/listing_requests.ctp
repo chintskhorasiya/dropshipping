@@ -113,11 +113,29 @@
                                                         echo "Fetching product data and offers.";
                                                     }
                                                     elseif($product_data[$i]['Product']['status']=='1' && !empty($product_data[$i]['Product']['ebay_id'])){
-                                                        echo "Successfully submitted to Ebay | ";
+                                                        //echo "Successfully submitted to Ebay | ";
+                                                        ?>
+                                                        <?php
+                                                        if($product_data[$i]['Product']['ebay_live']){
+                                                            if($product_data[$i]['Product']['source_id'] == '2'){
+                                                            ?>
+                                                            <a target="_blank" href="<?php echo 'http://www.ebay.co.uk/itm/'.$product_data[$i]['Product']['ebay_id']; ?>" class="btn btn-default"><?php echo $product_data[$i]['Product']['ebay_id']; ?></a>
+                                                            <?php
+                                                            }
+                                                            else
+                                                            {
+                                                            ?>
+                                                            <a target="_blank" href="<?php echo 'http://www.ebay.com/itm/'.$product_data[$i]['Product']['ebay_id']; ?>" class="btn btn-default"><?php echo $product_data[$i]['Product']['ebay_id']; ?></a>
+                                                            <?php
+                                                            }
+                                                        } else {
+                                                        ?>
+                                                            <a target="_blank" href="<?php echo 'http://cgi.sandbox.ebay.com/'.$product_data[$i]['Product']['ebay_id']; ?>" class="btn btn-default"><?php echo $product_data[$i]['Product']['ebay_id']; ?></a>
+                                                        <?php
+                                                        }
                                                         ?>
                                                         <a href="<?php echo DEFAULT_URL.'listings/listing_revise/'.$product_data[$i]['Product']['id'];?>" class="btn btn-default">Check Price</a>
                                                         <a href="<?php echo DEFAULT_URL.'products/checkavail/'.$product_data[$i]['Product']['id'];?>" class="btn btn-default">Check Availability</a>
-                                                        <a target="_blank" href="<?php echo 'http://cgi.sandbox.ebay.com/'.$product_data[$i]['Product']['ebay_id']; ?>" class="btn btn-default"><?php echo $product_data[$i]['Product']['ebay_id']; ?></a>
                                                         <?php
                                                     }   
                                                     else
