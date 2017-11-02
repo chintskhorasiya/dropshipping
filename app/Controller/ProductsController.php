@@ -526,7 +526,16 @@ class ProductsController extends AppController {
                         foreach ($us_items as $us_items_key => $us_item)
                         {
                             $us_item_totaloffers = (int) $us_item['Offers']['TotalOffers'];
-                            if($us_item_totaloffers <= 0){
+                            $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'qty', 'user_id', 'source_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$us_item['ASIN'])));
+
+                            $curr_ebay_qty = $curr_ebay_price_data['Product']['qty'];
+
+                            $this->loadmodel('SourceSettings');
+
+                            $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
+
+
+                            if($us_item_totaloffers <= 0 && $curr_ebay_qty > 0){
                                 array_push($us_out_of_stock_items, $us_item['ASIN']);
                             } else {
                                 if(isset($us_item['Offers']['Offer'][0])){
@@ -535,11 +544,7 @@ class ProductsController extends AppController {
                                         //$this->pre($us_offers_arr_value);
                                         $curr_offer_price = (float) ($us_offers_arr_value['OfferListing']['Price']['Amount']/100);
                                         //$this->pre($curr_offer_price);
-                                        $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'user_id', 'source_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$us_item['ASIN'])));
-                                        $this->loadmodel('SourceSettings');
-
-                                        $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
-
+                                        
                                         //$this->pre($curr_ebay_price_data);
                                         //$this->pre($curr_sourcesettings_data);
                                         $curr_ebay_price = (float) $curr_ebay_price_data['Product']['ebay_price'];
@@ -595,7 +600,16 @@ class ProductsController extends AppController {
                     {
                         $us_item = $response['Items']['Item'];
                         $us_item_totaloffers = (int) $us_item['Offers']['TotalOffers'];
-                        if($us_item_totaloffers <= 0){
+
+                        $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'qty', 'source_id', 'user_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$us_item['ASIN'])));
+
+                        $curr_ebay_qty = $curr_ebay_price_data['Product']['qty'];
+                        
+                        $this->loadmodel('SourceSettings');
+
+                        $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
+
+                        if($us_item_totaloffers <= 0 && $curr_ebay_qty > 0){
                             array_push($us_out_of_stock_items, $us_item['ASIN']);
                         } else {
                             if(isset($us_item['Offers']['Offer'][0])){
@@ -604,11 +618,6 @@ class ProductsController extends AppController {
                                     //$this->pre($us_offers_arr_value);
                                     $curr_offer_price = (float) ($us_offers_arr_value['OfferListing']['Price']['Amount']/100);
                                     //$this->pre($curr_offer_price);
-                                    $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$us_item['ASIN'])));
-                                    $this->loadmodel('SourceSettings');
-
-                                    $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
-
                                     //$this->pre($curr_ebay_price_data);
                                     //$this->pre($curr_sourcesettings_data);
                                     $curr_ebay_price = (float) $curr_ebay_price_data['Product']['ebay_price'];
@@ -739,7 +748,17 @@ class ProductsController extends AppController {
                         foreach ($uk_items as $uk_items_key => $uk_item)
                         {
                             $uk_item_totaloffers = (int) $uk_item['Offers']['TotalOffers'];
-                            if($uk_item_totaloffers <= 0){
+
+                            $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'qty', 'user_id', 'source_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$uk_item['ASIN'])));
+
+                            $curr_ebay_qty = $curr_ebay_price_data['Product']['qty'];
+                            
+                            $this->loadmodel('SourceSettings');
+
+                            $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
+
+
+                            if($uk_item_totaloffers <= 0 && $curr_ebay_qty > 0){
                                 array_push($uk_out_of_stock_items, $uk_item['ASIN']);
                             } else {
                                 if(isset($uk_item['Offers']['Offer'][0])){
@@ -748,11 +767,6 @@ class ProductsController extends AppController {
                                         //$this->pre($uk_offers_arr_value);
                                         $curr_offer_price = (float) ($uk_offers_arr_value['OfferListing']['Price']['Amount']/100);
                                         //$this->pre($curr_offer_price);
-
-                                        $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'user_id', 'source_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$uk_item['ASIN'])));
-                                        $this->loadmodel('SourceSettings');
-
-                                        $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
 
                                         //$this->pre($curr_ebay_price_data);
                                         //$this->pre($curr_sourcesettings_data);
@@ -777,11 +791,11 @@ class ProductsController extends AppController {
                                     //$this->pre($uk_offers_arr_value);
                                     $curr_offer_price = (float) ($uk_offers_arr_value['OfferListing']['Price']['Amount']/100);
 
-                                    $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'user_id', 'source_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$uk_item['ASIN'])));
+                                    /*$curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'user_id', 'source_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$uk_item['ASIN'])));
                                     
                                     $this->loadmodel('SourceSettings');
 
-                                    $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
+                                    $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));*/
 
                                     //$this->pre($curr_ebay_price_data);
                                     //$this->pre($curr_sourcesettings_data);
@@ -808,7 +822,16 @@ class ProductsController extends AppController {
                     {
                         $uk_item = $response['Items']['Item'];
                         $uk_item_totaloffers = (int) $uk_item['Offers']['TotalOffers'];
-                        if($uk_item_totaloffers <= 0){
+
+                        $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'user_id', 'source_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$uk_item['ASIN'])));
+                                    
+                        $this->loadmodel('SourceSettings');
+
+                        $curr_ebay_qty = $curr_ebay_price_data['Product']['qty'];
+
+                        $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
+
+                        if($uk_item_totaloffers <= 0 && $curr_ebay_qty > 0){
                             array_push($uk_out_of_stock_items, $uk_item['ASIN']);
                         } else {
                             if(isset($uk_item['Offers']['Offer'][0])){
@@ -816,12 +839,6 @@ class ProductsController extends AppController {
                                 foreach ($uk_offers_arr as $uk_offers_arr_key => $uk_offers_arr_value) {
                                     //$this->pre($uk_offers_arr_value);
                                     $curr_offer_price = (float) ($uk_offers_arr_value['OfferListing']['Price']['Amount']/100);
-
-                                    $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'user_id', 'source_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$uk_item['ASIN'])));
-                                    
-                                    $this->loadmodel('SourceSettings');
-
-                                    $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
 
                                     //$this->pre($curr_ebay_price_data);
                                     //$this->pre($curr_sourcesettings_data);
@@ -846,11 +863,11 @@ class ProductsController extends AppController {
                                 //$this->pre($uk_offers_arr_value);
                                 $curr_offer_price = (float) ($uk_offers_arr_value['OfferListing']['Price']['Amount']/100);
                                 
-                                $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'user_id', 'source_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$uk_item['ASIN'])));
+                                /*$curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'user_id', 'source_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$uk_item['ASIN'])));
                                     
                                 $this->loadmodel('SourceSettings');
 
-                                $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
+                                $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));*/
 
                                 //$this->pre($curr_ebay_price_data);
                                 //$this->pre($curr_sourcesettings_data);

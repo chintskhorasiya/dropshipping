@@ -47,7 +47,7 @@
                             <p>This page will automatically refresh. Listing requests usually take less than 45 minutes.</p>
                             <div class="adv-table">
                                 <input style="display: none;" type="submit" class="btn btn-info" value="Retry Failed Listings">
-                                <a href="<?php echo DEFAULT_URL ?>products/checkavail" class="btn btn-info">Revise Stock Availability</a>
+                                <a style="display:none;" href="<?php echo DEFAULT_URL ?>products/checkavail" class="btn btn-info">Revise Stock Availability</a>
 
                                 <span class="export-b" style="display: none;">
                                     <input type="submit" class="btn btn-info" value="Export CSV">
@@ -133,10 +133,13 @@
                                                             <a target="_blank" href="<?php echo 'http://cgi.sandbox.ebay.com/'.$product_data[$i]['Product']['ebay_id']; ?>" class="btn btn-default"><?php echo $product_data[$i]['Product']['ebay_id']; ?></a>
                                                         <?php
                                                         }
+                                                        
+                                                        if(isset($_GET['dev']) && $_GET['dev'] == "1"){
                                                         ?>
                                                         <a href="<?php echo DEFAULT_URL.'listings/listing_revise/'.$product_data[$i]['Product']['id'];?>" class="btn btn-default">Check Price</a>
                                                         <a href="<?php echo DEFAULT_URL.'products/checkavail/'.$product_data[$i]['Product']['id'];?>" class="btn btn-default">Check Availability</a>
                                                         <?php
+                                                        }
                                                     }   
                                                     else
                                                     {?>
