@@ -1229,6 +1229,7 @@ class ListingsController extends AppController {
                     $this->Product->saveField('ebay_id', $response->ItemID);
                     $this->Product->saveField('ebay_price', $startPrice);
                     $this->Product->saveField('ebay_cat_id', $item->PrimaryCategory->CategoryID);
+                    $this->Product->saveField('qty', $def_qty);
                     if(!empty($variations_dimentions) && $withVariations)
                     {
                         $this->Product->saveField('with_variations', 1);
@@ -1237,6 +1238,30 @@ class ListingsController extends AppController {
                     {
                         $this->Product->saveField('ebay_live', 1);
                     }
+
+                    // for adding mapping data
+
+                    $mapData = array();
+                    $mapData['CategoriesMappings']['a_cat_id'] = $primaryACategory;
+                    $mapData['CategoriesMappings']['e_cat_id'] = $item->PrimaryCategory->CategoryID;
+                    $mapData['CategoriesMappings']['source_id'] = (int) $storeId;
+                    $mapData['CategoriesMappings']['user_id'] = $userid;
+                    
+                    $this->loadmodel('CategoriesMappings');
+
+                    $already_map_data = $this->CategoriesMappings->find('first',array('conditions' => array('a_cat_id' => $mapData['CategoriesMappings']['a_cat_id'], 'user_id' => $userid, 'source_id' => $mapData['CategoriesMappings']['source_id'])));
+
+                    if(count($already_map_data) > 0)
+                    {
+                        $mapData['CategoriesMappings']['id'] = $already_map_data['CategoriesMappings']['id'];
+                        $this->CategoriesMappings->save($mapData, array('fieldList' => array('e_cat_id')));
+                    }
+                    else
+                    {
+                        $this->CategoriesMappings->save($mapData);
+                    }
+
+                    // for adding mapping data
 
                 }
 
