@@ -451,6 +451,16 @@ class ProductsController extends AppController {
 
     function reviseitems(){
 
+        // first entry for cron
+
+        $this->loadmodel('ReviseItems');
+        $crondata['ReviseItems']['start_date'] = date('Y-m-d H:i:s');
+        $this->ReviseItems->set($crondata);
+        $revisedResult = $this->ReviseItems->save($crondata);
+        $revisedID = $revisedResult['ReviseItems']['id'];
+        
+        // first entry for cron
+
         $us_products_data = $this->Product->find('all', array('conditions' => array('status IN'=> array('0','1'), 'source_id'=>'1', 'ebay_id <>' => 'NULL')));
 
         //$this->pre($us_products_data);exit;
@@ -658,11 +668,11 @@ class ProductsController extends AppController {
 
             }
 
-            //echo "Out of stock items (US)";
-            //echo "<br>";
-            //$this->pre($us_out_of_stock_items);
-            //echo "________________________________________________________________";   
-            //echo "<br>";
+            echo "Out of stock items (US)";
+            echo "<br>";
+            $this->pre($us_out_of_stock_items);
+            echo "________________________________________________________________";   
+            echo "<br>";
             echo "Price updated items (US)";
             echo "<br>";
             $this->pre($us_priceupdated_items);
@@ -870,11 +880,11 @@ class ProductsController extends AppController {
                 
             }
 
-            //echo "Out of stock items (UK)";
-            //echo "<br>";
-            //$this->pre($uk_out_of_stock_items);
-            //echo "________________________________________________________________";   
-            //echo "<br>";
+            echo "Out of stock items (UK)";
+            echo "<br>";
+            $this->pre($uk_out_of_stock_items);
+            echo "________________________________________________________________";   
+            echo "<br>";
             echo "Price updated items (UK)";
             echo "<br>";
             $this->pre($uk_priceupdated_items);
@@ -884,18 +894,85 @@ class ProductsController extends AppController {
 
         //exit;
 
-        foreach ($us_priceupdated_items as $us_asin_no => $updated_price) {
-            $updated_result = $this->update_price($us_asin_no, $updated_price);
-            if($updated_result){
-                echo $us_asin_no." price updated to ".$updated_price."<br>";
+        if(count($us_out_of_stock_items) > 0){
+
+            $us_out_of_stock_and_succeed_items = array();
+            
+            foreach ($us_out_of_stock_items as $us_asin_no) {
+                $updated_result = $this->update_out_of_stock($us_asin_no);
+                if($updated_result){
+                    echo $us_asin_no." is updated to out of stock <br>";
+                    $us_out_of_stock_and_succeed_items[] = $us_asin_no;
+                }
+            }
+
+        }
+
+        if(count($uk_out_of_stock_items) > 0){
+
+            $uk_out_of_stock_and_succeed_items = array();
+            
+            foreach ($uk_out_of_stock_items as $uk_asin_no) {
+                $updated_result = $this->update_out_of_stock($uk_asin_no);
+                if($updated_result){
+                    echo $uk_asin_no." is updated to out of stock <br>";
+                    $uk_out_of_stock_and_succeed_items[] = $uk_asin_no;
+                }
+            }
+
+        }
+
+        if(count($us_priceupdated_items) > 0){
+
+            $us_priceupdated_and_succeed_items = array();
+            
+            foreach ($us_priceupdated_items as $us_asin_no => $updated_price) {
+                $updated_result = $this->update_price($us_asin_no, $updated_price);
+                if($updated_result){
+                    echo $us_asin_no." price updated to ".$updated_price."<br>";
+                    $us_priceupdated_and_succeed_items[$us_asin_no] = $updated_price;
+                }
+            }
+
+        }
+
+        if(count($uk_priceupdated_items) > 0){
+
+            $uk_priceupdated_and_succeed_items = array();
+
+            foreach ($uk_priceupdated_items as $uk_asin_no => $updated_price) {
+                $updated_result = $this->update_price($uk_asin_no, $updated_price);    
+                if($updated_result){
+                    echo $uk_asin_no." price updated to ".$updated_price."<br>";
+                    $uk_priceupdated_and_succeed_items[$uk_asin_no] = $updated_price;
+                }
             }
         }
 
-        foreach ($uk_priceupdated_items as $uk_asin_no => $updated_price) {
-            $updated_result = $this->update_price($uk_asin_no, $updated_price);    
-            if($updated_result){
-                echo $uk_asin_no." price updated to ".$updated_price."<br>";
+        $this->ReviseItems->id = $this->ReviseItems->field('id', array('id' => $revisedID));
+
+        //var_dump($this->Product->id);return true;
+
+        if ($this->ReviseItems->id) {
+
+            if(count($us_out_of_stock_and_succeed_items) > 0 || count($uk_out_of_stock_and_succeed_items) > 0){
+                $out_of_stock_succeeded_items = json_encode(array_merge((array)$us_out_of_stock_and_succeed_items, (array)$uk_out_of_stock_and_succeed_items));
+                //var_dump($out_of_stock_succeeded_items);
+                $outofstockitems_saved = $this->ReviseItems->saveField('out_of_stock_items', $out_of_stock_succeeded_items);
             }
+
+            if(count($us_priceupdated_and_succeed_items) > 0 || count($uk_priceupdated_and_succeed_items) > 0){
+                $price_updated_succeeded_items = json_encode(array_merge((array)$us_priceupdated_and_succeed_items, (array)$uk_priceupdated_and_succeed_items));
+                //var_dump($price_updated_succeeded_items);
+                $priceupdateditems_saved = $this->ReviseItems->saveField('price_updated_items', $price_updated_succeeded_items);
+            }
+            
+            //var_dump($price_saved);
+            $end_date = date('Y-m-d H:i:s');
+            $enddate_saved = $this->ReviseItems->saveField('end_date', $end_date);
+            $status_saved = $this->ReviseItems->saveField('status', 1);
+            //var_dump($date_modified);
+            //print("The item was successfully revised on the eBay Sandbox.");
         }
 
         exit;
@@ -1010,6 +1087,117 @@ class ProductsController extends AppController {
                 $date_modified = $this->Product->saveField('modified_date', $modified_date);
                 //var_dump($date_modified);
                 //print("The item was successfully revised on the eBay Sandbox.");
+            }
+
+            return true;
+        
+        }
+    }
+
+    function update_out_of_stock($asin_no)
+    {
+
+        $product_data_from_asin = $this->Product->find('first', array('conditions' => array('asin_no'=>$asin_no)));
+
+        $is_product_live = (int) $product_data_from_asin['Product']['ebay_live'];
+        $product_ebay_id = $product_data_from_asin['Product']['ebay_id'];
+        $siteId = $product_data_from_asin['Product']['source_id'];
+        $productId = $product_data_from_asin['Product']['id'];
+
+        //var_dump($productId);exit;
+        
+        if($is_product_live)
+        {
+            $service = new Services\TradingService([
+                'credentials' => [
+                    'devId' => EBAY_LIVE_DEVID,
+                    'appId' => EBAY_LIVE_APPID,
+                    'certId' => EBAY_LIVE_CERTID,
+                ],
+                'sandbox'     => false,
+                'siteId'      => $siteId
+            ]);
+
+            $ebay_auth_token = EBAY_LIVE_AUTHTOKEN;
+        }
+        else
+        {
+            $service = new Services\TradingService([
+                'credentials' => [
+                    'devId' => EBAY_SANDBOX_DEVID,
+                    'appId' => EBAY_SANDBOX_APPID,
+                    'certId' => EBAY_SANDBOX_CERTID,
+                ],
+                'sandbox'     => true,
+                'siteId'      => $siteId
+            ]);
+
+            $ebay_auth_token = EBAY_SANDBOX_AUTHTOKEN;
+        }
+
+        /*$request = new Types\ReviseFixedPriceItemRequestType();
+        $request->RequesterCredentials = new Types\CustomSecurityHeaderType();
+        $request->RequesterCredentials->eBayAuthToken = $ebay_auth_token;
+        $item = new Types\ItemType();
+        $item->ItemID = $product_ebay_id;
+        $item->StartPrice = new Types\AmountType(['value' => (float)$new_price]);
+        $request->Item = $item;
+        $response = $service->reviseFixedPriceItem($request);*/
+
+        $request = new Types\ReviseInventoryStatusRequestType();
+        $request->RequesterCredentials = new Types\CustomSecurityHeaderType();
+        $request->RequesterCredentials->eBayAuthToken = $ebay_auth_token;
+        $inventory = new Types\InventoryStatusType();
+        $inventory->ItemID = $product_ebay_id;
+        $inventory->Quantity = 0;
+        $request->InventoryStatus[] = $inventory;
+        $response = $service->ReviseInventoryStatus($request);
+
+        //$this->pre($response);
+
+        //return true;
+
+        /*if (isset($response->Errors)) {
+            return false;
+            foreach ($response->Errors as $error) {
+                
+                if($error->SeverityCode === 'Warning'){
+
+                    $_SESSION['warning_msg'] = sprintf(
+
+                        "%s: %s\n%s\n\n",
+                        $error->SeverityCode === Enums\SeverityCodeType::C_ERROR ? 'Error' : 'Warning',
+                        $error->ShortMessage,
+                        $error->LongMessage
+                    );
+
+
+                } else {
+
+                    $_SESSION['error_msg'] = sprintf(
+                        "%s: %s\n%s\n\n",
+                        $error->SeverityCode === Enums\SeverityCodeType::C_ERROR ? 'Error' : 'Warning',
+                        $error->ShortMessage,
+                        $error->LongMessage
+                    );
+
+                }
+            }
+        }*/
+        if ($response->Ack !== 'Failure') {
+
+            //$_SESSION['success_msg'] = "The item was successfully revised on the eBay.";
+            //var_dump($productId);return true;
+
+            $this->Product->id = $this->Product->field('id', array('id' => $productId));
+
+            //var_dump($this->Product->id);return true;
+
+            if ($this->Product->id) {
+
+                $qty_saved = $this->Product->saveField('qty', 0);
+                $modified_date = date('Y-m-d H:i:s');
+                $date_modified = $this->Product->saveField('modified_date', $modified_date);
             }
 
             return true;
