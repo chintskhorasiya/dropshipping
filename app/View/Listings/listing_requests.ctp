@@ -44,7 +44,7 @@
                     <section class="panel">
                         <div class="panel-body">
                             <h4>Recent listing requests</h4>
-                            <p>This page will automatically refresh. Listing requests usually take less than 45 minutes.</p>
+                            <p>Listing requests usually take less than 45 minutes.</p>
                             <div class="adv-table">
                                 <input style="display: none;" type="submit" class="btn btn-info" value="Retry Failed Listings">
                                 <a style="display:none;" href="<?php echo DEFAULT_URL ?>products/checkavail" class="btn btn-info">Revise Stock Availability</a>
@@ -158,6 +158,18 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <?php
+                            //echo $this->Paginator->sort('user_id', null, array('direction' => 'desc'));
+                            ?>
+                            <!-- Shows the page numbers -->
+                            <?php //echo $this->Paginator->numbers(); ?>
+                            <!-- Shows the next and previous links -->
+                            <?php echo $this->Paginator->prev('« Previous', array('class' => 'btn btn-default'), null, 
+                                array('class' => 'disabled')); ?>
+                            <?php echo $this->Paginator->next('Next »', array('class' => 'btn btn-default'), null,
+                                array('class' => 'disabled')); ?> 
+                            <!-- prints X of Y, where X is current page and Y is number of pages -->
+                            <?php echo $this->Paginator->counter(); ?> 
                         </div>
                     </section>
                 </div>

@@ -300,22 +300,17 @@ class ListingsController extends AppController {
 
         $userid = $this->Session->read(md5(SITE_TITLE) . 'USERID');
 
-//        $userid = $this->decrypt_data($user_encryptid,ID_LENGTH);
+        $this->paginate = array(
+            'conditions' => array('user_id'=>$userid, 'status IN'=> array(0,1)),
+            'limit' => 10,
+            'order' => array('id' => 'desc')
+        );
 
-//        $this->check_login_user($userid);
+        $product_data = $this->paginate('Product');
 
-
-
-        $product_data = $this->Product->find('all', array('conditions' => array('user_id'=>$userid, 'status IN'=> array(0,1))));
+        //$product_data = $this->Product->find('all', array('conditions' => array('user_id'=>$userid, 'status IN'=> array(0,1)),'order' => 'created_date DESC' ) ); //'page'=>$page, 'limit'=>$limit
 
         $this->set('product_data',$product_data);
-        //$this->set('user_encryptid',$user_encryptid);
-
-
-
-//        $this->pre($product_data);
-
-//        exit;
 
     }
 

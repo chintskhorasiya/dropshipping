@@ -78,15 +78,19 @@
             <div class="row">
                 <div class="col-lg-12">
                     <?php echo $this->Session->flash('source_setting_save'); ?>
-                    <h1>Amazon US Settings</h1>
+                    <?php $sourceId = $this->data['SourceSetting']['source_id']; ?>
+                    <?php if($sourceId == "2"){ ?>
+                        <h1>Amazon UK Settings</h1>
+                    <?php } else { ?>
+                        <h1>Amazon US Settings</h1>
+                    <?php } ?>
                     <section class="panel">
                         <header class="panel-heading btn-primary"> Repricing Settings <br/>
-                            <a href="<?php echo DEFAULT_URL.'cmspages/repricing_work';?>">How repricing works</a>
+                            <a style="display:none;" href="<?php echo DEFAULT_URL.'cmspages/repricing_work';?>">How repricing works</a>
                         </header>
                         <div class="panel-body">
                             <div class="position-center">
                                 <?php
-                                $sourceId = $this->data['SourceSetting']['source_id'];
                                 if($sourceId == "2"){
                                     $curSymbol = "£";
                                 } else {
