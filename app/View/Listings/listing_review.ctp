@@ -360,7 +360,14 @@
 
                                         $cnt=0;
                                         if (count($item_specification) > 0) {
-
+                                            $mpn_received = false;
+                                            if(isset($item_specification['MPN'])){
+                                                $mpn_received = true;
+                                            } else {
+                                                $item_specification['MPN'] = $product_data['Product']['asin_no'];
+                                            }
+                                            
+                                            //echo '<pre>';print_r($item_specification);echo '</pre>';
                                             echo '<div id="item_data">';
 //                                            for ($i = 0; $i < count($item_specification); $i++) {
                                             foreach ($item_specification as $key=>$value) {
@@ -376,14 +383,16 @@
                                                     <div class="form-group col-md-6 padding-left-o">
                                                         <div class="input-group pull-left" style="width: 91%;">
                                                             <?php if($key == "Style") {
-                                                                $valueArr = explode(" ", $value);
-                                                                $value = "";
-                                                                foreach($valueArr as $vAkey => $vAvalue){
-                                                                    if($vAkey < 4){
-                                                                        $value .= $vAvalue." ";
-                                                                    }   
-                                                                }
-                                                            } ?>
+                                                                    $valueArr = explode(" ", $value);
+                                                                    $value = "";
+                                                                    foreach($valueArr as $vAkey => $vAvalue){
+                                                                        if($vAkey < 4){
+                                                                            $value .= $vAvalue." ";
+                                                                        }   
+                                                                    } 
+                                                                } elseif($key == "MPN"){
+                                                                    $value = $product_data['Product']['asin_no'];
+                                                                } ?>
                                                             <input type="text" class="form-control validate required" name="item_val[]" value="<?php echo $value;?>">
                                                         </div>
                                                         <button type="button" class="btn btn-info pull-right" onclick="removespec('<?php echo ($cnt);?>')"><i class="fa fa-times"></i></button>
@@ -409,44 +418,62 @@
                                     <?php /* */ ?>
 
                                     <?php
-                                    $image_set = json_decode($product_data['Product']['image_set'],true);
-//                                    echo '<pre>';
-//                                    print_r($image_set);
-//                                    echo '</pre>';
-//                                    exit;
-
                                     if (isset($product_data['Product']['image_set']) && $product_data['Product']['image_set'] != '') {
 
                                         $image_set = json_decode($product_data['Product']['image_set'],true);
-
+                                        //echo '<pre>';
+                                        //print_r($image_set);
+                                        //echo '</pre>';
+                                        //exit;
                                         if (count($image_set) > 0) {
 
                                             echo '<div id="repricing_data">';
-                                            for ($i = 0; $i < count($image_set); $i++) {
 
-                                                if(isset($image_set[$i]['LargeImage']['URL']))
-                                                    $image = $image_set[$i]['LargeImage']['URL'];
+                                            if(isset($image_set[0]) && !empty($image_set[0]))
+                                            {
+                                                for ($i = 0; $i < count($image_set); $i++) {
+
+                                                    if(isset($image_set[$i]['LargeImage']['URL']))
+                                                        $image = $image_set[$i]['LargeImage']['URL'];
+                                                    else
+                                                        $image = $image_set[$i]['MediumImage']['URL'];
+                                                    ?>
+                                                    <div class="repricing remove<?php echo ($i);?>">
+                                                        <div class="form-group col-md-4 padding-left-o">
+                                                            <div class="input-group pull-left" style="width:72%;">
+                                                                <input type="text" class="form-control validate required" name="image_name[]" value="<?php echo $image_set[$i]['LargeImage']['URL'];?>" />
+                                                            </div>
+                                                            <button type="button" class="btn btn-info pull-left" style="margin:0px 3px" onclick="removebox('<?php echo ($i);?>')" ><i class="fa fa-times"></i></button>
+                                                            <a target="_blank" href="<?php echo $image_set[$i]['LargeImage']['URL'];?>">View</a>
+                                                        </div>
+                                                    </div>
+                                                    <?php
+                                                    //echo "<li>" . $image_set[$i]['LargeImage'] . "</li>";
+                                                }
+                                            }
+                                            else
+                                            {
+                                                $imgset_counter = 0;
+
+                                                if(isset($image_set['LargeImage']['URL']))
+                                                    $image = $image_set['LargeImage']['URL'];
                                                 else
-                                                    $image = $image_set[$i]['MediumImage']['URL'];
+                                                    $image = $image_set['MediumImage']['URL'];
+                                            
                                                 ?>
-                                                <div class="repricing remove<?php echo ($i);?>">
+                                                <div class="repricing remove<?php echo ($imgset_counter);?>">
                                                     <div class="form-group col-md-4 padding-left-o">
                                                         <div class="input-group pull-left" style="width:72%;">
-                                                            <input type="text" class="form-control validate required" name="image_name[]" value="<?php echo $image_set[$i]['LargeImage']['URL'];?>" />
+                                                            <input type="text" class="form-control validate required" name="image_name[]" value="<?php echo $image_set['LargeImage']['URL'];?>" />
                                                         </div>
-                                                        <button type="button" class="btn btn-info pull-left" style="margin:0px 3px" onclick="removebox('<?php echo ($i);?>')" ><i class="fa fa-times"></i></button>
-                                                        <a target="_blank" href="<?php echo $image_set[$i]['LargeImage']['URL'];?>">View</a>
+                                                        <button type="button" class="btn btn-info pull-left" style="margin:0px 3px" onclick="removebox('<?php echo ($imgset_counter);?>')" ><i class="fa fa-times"></i></button>
+                                                        <a target="_blank" href="<?php echo $image_set['LargeImage']['URL'];?>">View</a>
                                                     </div>
                                                 </div>
                                                 <?php
-                                                //echo "<li>" . $image_set[$i]['LargeImage'] . "</li>";
                                             }
                                             echo '</div>';
                                         }
-//                                        echo '<pre>';
-//                                        print_r($image_set);
-//                                        echo '</pre>';
-//                                        exit;
                                     }
                                     ?>
 

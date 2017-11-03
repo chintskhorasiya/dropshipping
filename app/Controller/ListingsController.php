@@ -1225,6 +1225,8 @@ class ListingsController extends AppController {
                     $this->Product->saveField('ebay_price', $startPrice);
                     $this->Product->saveField('ebay_cat_id', $item->PrimaryCategory->CategoryID);
                     $this->Product->saveField('qty', $def_qty);
+                    $modified_date = date('Y-m-d H:i:s');
+                    $this->Product->saveField('modified_date', $modified_date);
                     if(!empty($variations_dimentions) && $withVariations)
                     {
                         $this->Product->saveField('with_variations', 1);
@@ -1284,6 +1286,36 @@ class ListingsController extends AppController {
 
 
 
+        }
+        elseif(isset($_POST['btn_reject']) && $_POST['btn_reject'] == "Reject")
+        {
+            
+            $asin_no = $_POST['asin_no'];
+
+            if(!empty($asin_no))
+            {
+                $this->loadmodel('Product');
+
+                $this->Product->id = $this->Product->field('id', array('asin_no' => $asin_no));
+                if ($this->Product->id)
+                {
+                    //$this->pre($this->Product);exit;
+                    $this->Product->saveField('status', 2);
+                    $modified_date = date('Y-m-d H:i:s');
+                    $this->Product->saveField('modified_date', $modified_date);
+
+                    $_SESSION['success_msg'] = "Item Rejected Successfully!";
+
+                }
+            }
+
+            $return_url = DEFAULT_URL.'listings/listing_requests/';
+            return $this->redirect($return_url);
+        }
+        else
+        {
+            $return_url = DEFAULT_URL.'listings/listing_requests/';
+            return $this->redirect($return_url);
         }
 
     }
