@@ -574,6 +574,8 @@ class ListingsController extends AppController {
 
                 $ebay_auth_token = EBAY_LIVE_AUTHTOKEN;
 
+                $paypal_email = "abrar6@rediffmail.com";
+
                 //$this->pre($service);exit;
             }
             else
@@ -598,6 +600,9 @@ class ListingsController extends AppController {
                 ]);
 
                 $ebay_auth_token = EBAY_SANDBOX_AUTHTOKEN;
+
+                $paypal_email = "abrar6@rediffmail.com";
+                //$paypal_email = "projectdesk-facilitator@seawindsolution.com";
             }
 
             //var_dump($ebay_auth_token);exit;
@@ -1070,18 +1075,27 @@ class ListingsController extends AppController {
 
             $item->ConditionID = (int)$itemCondition;
 
-            $item->PaymentMethods[] = 'PayPal';
-
-            $item->PayPalEmailAddress = 'projectdesk-facilitator@seawindsolution.com';
-
-            $item->DispatchTimeMax = 1;
-
-            $item->ShipToLocations[] = 'None';
-
-            $item->ReturnPolicy = new Types\ReturnPolicyType();
-
-            //$item->ReturnPolicy->ReturnsAcceptedOption = 'ReturnsNotAccepted';
-            $item->ReturnPolicy->ReturnsAcceptedOption = 'ReturnsAccepted';
+            if($ebay_live && $storeId == "2")
+            {
+                $item->SellerProfiles = new Types\SellerProfilesType();
+                $item->SellerProfiles->SellerShippingProfile = new Types\SellerShippingProfileType();
+                $item->SellerProfiles->SellerShippingProfile->ShippingProfileID = 82082748013;
+                $item->SellerProfiles->SellerReturnProfile = new Types\SellerReturnProfileType();
+                $item->SellerProfiles->SellerReturnProfile->ReturnProfileID = 39855481013;
+                $item->SellerProfiles->SellerPaymentProfile = new Types\SellerPaymentProfileType();
+                $item->SellerProfiles->SellerPaymentProfile->PaymentProfileID = 12920575013;
+            }
+            else
+            {
+                $item->PaymentMethods[] = 'PayPal';
+                $item->PayPalEmailAddress = $paypal_email;
+                $item->DispatchTimeMax = 1;
+                $item->ReturnPolicy = new Types\ReturnPolicyType();
+                //$item->ReturnPolicy->ReturnsAcceptedOption = 'ReturnsNotAccepted';
+                $item->ReturnPolicy->ReturnsAcceptedOption = 'ReturnsAccepted';
+                $item->ReturnPolicy->ReturnsWithinOption = 'Days_30';
+                $item->ShipToLocations[] = 'None';
+            }
 
             //$this->pre($item);exit;
 

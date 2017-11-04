@@ -74,6 +74,7 @@ $lookup->setResponseGroup(array('Large', 'VariationMatrix', 'VariationSummary'
 //$lookup->setItemId('B06VW5QNBF');
 $lookup->setItemId($awnid);
 $lookup->setCondition('All');
+$lookup->setMerchantId('Amazon');
 $response = $apaiIo->runOperation($lookup);
 
 $response = json_decode (json_encode (simplexml_load_string ($response)), true);
@@ -83,40 +84,6 @@ $response = json_decode (json_encode (simplexml_load_string ($response)), true);
 //pre($response);
 //exit;
 //pre($response['Items']['Item']['BrowseNodes']['BrowseNode']);exit;
-$browseNodes = $response['Items']['Item']['BrowseNodes']['BrowseNode'];
-if(is_array($browseNodes) && isset($browseNodes[0])){
-
-    foreach ($browseNodes as $browseNode) {
-        //pre($browseNode);
-        $nodeJsonString = "[";
-        $nodeJsonString .= '{"id":'.$browseNode['BrowseNodeId'].',"name":"'.$browseNode['Name'].'"';
-        //echo $nodeJsonString;
-        $awsCategories[] = json_decode(getAncestors($browseNode['Ancestors'], $nodeJsonString));
-    }
-
-} else {
-
-    $browseNode = $browseNodes;
-    //pre($browseNode);exit;
-    $nodeJsonString = "[";
-    $nodeJsonString .= '{"id":'.$browseNode['BrowseNodeId'].',"name":"'.$browseNode['Name'].'"';
-    $finalResult = getAncestors($browseNode['Ancestors'], $nodeJsonString);
-    $awsCategories = json_decode($finalResult);
-
-}
-
-function getAncestors($nodeId , $nodeJsonString){
-    //var_dump($nodeJsonString);
-    //echo "<br>";
-    $nodeJsonString .= ',"parent":'.$nodeId['BrowseNode']['BrowseNodeId'].'},';
-    $nodeJsonString .= '{"id":'.$nodeId['BrowseNode']['BrowseNodeId'].',"name":"'.$nodeId['BrowseNode']['Name'].'"';
-    if(!empty($nodeId['BrowseNode']['Ancestors']) && is_array($nodeId['BrowseNode']['Ancestors']) && count($nodeId['BrowseNode']['Ancestors']) > 0){
-        return getAncestors($nodeId['BrowseNode']['Ancestors'], $nodeJsonString);
-    } else {
-        $nodeJsonString .= ',"parent":0}]';
-        return $nodeJsonString;
-    }     
-}
 
 //string(196) "{{"id":1730879031,"name":Jeans,"parent":1730841031},{"id":1730841031,"name":Girls,"parent":83451031},{"id":83451031,"name":Categories,"parent":83450031},{"id":83450031,"name":Clothing,"parent":0}}"
 
@@ -130,8 +97,39 @@ if(!empty($response))
         header('Location: '.$page_url);
         exit;
     }
+    elseif (isset($response['Items']['Item']['Offers']['TotalOffers']) && $response['Items']['Item']['Offers']['TotalOffers'] <= 0)
+    {
+        $error = "This product does not sell by Amazon Seller";
+        $page_url = DEFAULT_URL.'listings/listing_requests/msg:'.$error;
+        header('Location: '.$page_url);
+        exit;
+    }
     else
     {
+        // categories
+        $browseNodes = $response['Items']['Item']['BrowseNodes']['BrowseNode'];
+        if(is_array($browseNodes) && isset($browseNodes[0])){
+
+            foreach ($browseNodes as $browseNode) {
+                //pre($browseNode);
+                $nodeJsonString = "[";
+                $nodeJsonString .= '{"id":'.$browseNode['BrowseNodeId'].',"name":"'.$browseNode['Name'].'"';
+                //echo $nodeJsonString;
+                $awsCategories[] = json_decode(getAncestors($browseNode['Ancestors'], $nodeJsonString));
+            }
+
+        } else {
+
+            $browseNode = $browseNodes;
+            //pre($browseNode);exit;
+            $nodeJsonString = "[";
+            $nodeJsonString .= '{"id":'.$browseNode['BrowseNodeId'].',"name":"'.$browseNode['Name'].'"';
+            $finalResult = getAncestors($browseNode['Ancestors'], $nodeJsonString);
+            $awsCategories = json_decode($finalResult);
+
+        }
+        // categories 
+
         $add_product_array = array();
         $get_product_attribute = $response['Items']['Item']['ItemAttributes'];
         $offer_summary = $response['Items']['Item']['OfferSummary'];
@@ -291,6 +289,7 @@ if(!empty($response))
             $lookup->setResponseGroup(array('Variations', 'VariationMatrix', 'VariationSummary', 
 'VariationOffers')); // More detailed information
             $lookup->setItemId($ParentASIN);
+            $lookup->setMerchantId('Amazon');
             $lookup->setCondition('All');
             $var_response = $apaiIo->runOperation($lookup);
             $var_response = json_decode (json_encode (simplexml_load_string ($var_response)), true);
@@ -440,5 +439,18 @@ function pre($data)
     echo "<pre>";
     print_r($data);
     echo "</pre>";
+}
+
+function getAncestors($nodeId , $nodeJsonString){
+    //var_dump($nodeJsonString);
+    //echo "<br>";
+    $nodeJsonString .= ',"parent":'.$nodeId['BrowseNode']['BrowseNodeId'].'},';
+    $nodeJsonString .= '{"id":'.$nodeId['BrowseNode']['BrowseNodeId'].',"name":"'.$nodeId['BrowseNode']['Name'].'"';
+    if(!empty($nodeId['BrowseNode']['Ancestors']) && is_array($nodeId['BrowseNode']['Ancestors']) && count($nodeId['BrowseNode']['Ancestors']) > 0){
+        return getAncestors($nodeId['BrowseNode']['Ancestors'], $nodeJsonString);
+    } else {
+        $nodeJsonString .= ',"parent":0}]';
+        return $nodeJsonString;
+    }     
 }
 ?>
