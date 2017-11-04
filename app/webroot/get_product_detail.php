@@ -106,6 +106,8 @@ if(!empty($response))
     }
     else
     {
+        //pre($response);
+        //exit;
         // categories
         $browseNodes = $response['Items']['Item']['BrowseNodes']['BrowseNode'];
         if(is_array($browseNodes) && isset($browseNodes[0])){
@@ -210,7 +212,35 @@ if(!empty($response))
         $add_product_array['pageurl'] = urldecode($response['Items']['Item']['DetailPageURL']);
         $add_product_array['title'] = addslashes($get_product_attribute['Title']);
         $add_product_array['main_image'] = (isset($response['Items']['Item']['LargeImage']['URL']))?$response['Items']['Item']['LargeImage']['URL']:'';
-        $add_product_array['image_set'] = (isset($response['Items']['Item']['ImageSets']['ImageSet']))?json_encode($response['Items']['Item']['ImageSets']['ImageSet']):'';
+        
+        // [[CUSTOM]] changed image sequece
+        $newImageSetArr = array();
+        $newImagesArr = array();
+        if(isset($response['Items']['Item']['ImageSets']['ImageSet'][0]))
+        {
+            $totalImgs = count($response['Items']['Item']['ImageSets']['ImageSet']);
+            foreach ($response['Items']['Item']['ImageSets']['ImageSet'] as $imgsetId => $imgsetImg) {
+                if($imgsetId == ($totalImgs - 1) && !in_array($imgsetImg['LargeImage']['URL'], $newImagesArr)){
+                    array_push($newImageSetArr, $imgsetImg);
+                    array_push($newImagesArr, $imgsetImg['LargeImage']['URL']);
+                }
+            }
+            foreach ($response['Items']['Item']['ImageSets']['ImageSet'] as $imgsetId => $imgsetImg) {
+                if($imgsetId < ($totalImgs - 1) && !in_array($imgsetImg['LargeImage']['URL'], $newImagesArr)){
+                    array_push($newImageSetArr, $imgsetImg);
+                    array_push($newImagesArr, $imgsetImg['LargeImage']['URL']);
+                }
+            }
+            
+        } else {
+            $newImageSetArr = $response['Items']['Item']['ImageSets']['ImageSet'];
+        }
+        // [[CUSTOM]] changed image sequece
+
+        //pre($newImageSetArr);
+        //pre($newImagesArr);exit;
+        //$add_product_array['image_set'] = (isset($response['Items']['Item']['ImageSets']['ImageSet']))?json_encode($response['Items']['Item']['ImageSets']['ImageSet']):'';
+        $add_product_array['image_set'] = (isset($newImageSetArr)?json_encode($newImageSetArr):'');
 
         $add_product_array['binding'] = (isset($get_product_attribute['Binding']))?$get_product_attribute['Binding']:'';
         $add_product_array['brand'] = $get_product_attribute['Brand'];
@@ -246,6 +276,7 @@ if(!empty($response))
         $add_product_array['item_specification'] = (isset($add_item_specification))?addslashes(json_encode($add_item_specification)):'';
         //`warranty`, `description`, `submit_status`, `status`, `created_date`
         $add_product_array['warranty'] = isset($get_product_attribute['Warranty'])?$get_product_attribute['Warranty']:'';
+        //pre($response['Items']['Item']);exit;
         $add_product_array['description'] = (!empty($response['Items']['Item']['EditorialReviews']['EditorialReview']['Content']))?addslashes($response['Items']['Item']['EditorialReviews']['EditorialReview']['Content']):'';
         //$add_product_array['page_content'] = addslashes(json_encode(($response['Items'])));
         $add_product_array['submit_status'] = ($_GET['form_submit']==1)?'List Now':'Review and List';

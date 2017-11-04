@@ -23,7 +23,7 @@
             description += '<p>'+$('#product_description p').html()+'</p>';
             description += '<ul>'+$('#product_description ul').html()+'</ul>';
 
-            $('#itemDescription').val(description);
+            //$('#itemDescription').val(description);
         });
 
         function add_moredata()
@@ -176,7 +176,7 @@
                                 }
                                 ?>
                                 <form action="<?php echo DEFAULT_URL.'listings/listing_review_approve/' ?>" method="post" enctype="multipart/form-data" id="frmlisting_review" name="frmlisting_review">
-                                    <input type="hidden" name="itemDescription" id="itemDescription" value="" />
+                                    <input type="hidden" name="itemDescriptionOld" id="itemDescriptionOld" value="" />
                                     <div class="clear"></div>
                                     <div class="form-group col-md-12 padding-left-o">
                                         <label>Title</label>
@@ -184,6 +184,13 @@
                                             <input type="text" class="form-control validate required" maxlength="80" name="title" id="title" value="<?php echo stripslashes(substr($product_data['Product']['title'],0,80)); ?>" onkeyup="updateCount();" />
                                         </div>
                                         <div class="text-right" ><span id="titlecnt"><?php echo strlen(($product_data['Product']['title']))?> </span> characters of 80 max</div>
+                                    </div>
+                                    <div class="clear"></div>
+                                    <div class="form-group col-md-12 padding-left-o">
+                                        <label>Description</label>
+                                        <div class="input-group">
+                                            <textarea name="itemDescription" id="itemDescription" class="form-control"><?php echo stripslashes($product_data['Product']['description']); ?></textarea>
+                                        </div>
                                     </div>
                                     <div class="clear"></div>
 
