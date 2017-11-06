@@ -524,6 +524,84 @@ class ListingsController extends AppController {
 
     }
 
+    function test_categories()
+    {
+        $service = new Services\TradingService([
+            'credentials' => [
+
+                        'devId' => EBAY_LIVE_DEVID,
+
+                        'appId' => EBAY_LIVE_APPID,
+
+                        'certId' => EBAY_LIVE_CERTID,
+
+                    ],
+            'siteId'      => Constants\SiteIds::GB
+        ]);
+
+
+        /**
+         * Create the request object.
+         */
+        $request = new Types\GetSuggestedCategoriesRequestType();
+        /**
+         * An user token is required when using the Trading service.
+         *
+         * NOTE: eBay will use the token to determine which store to return.
+         */
+        $request->RequesterCredentials = new Types\CustomSecurityHeaderType();
+        $request->RequesterCredentials->eBayAuthToken = EBAY_LIVE_AUTHTOKEN;
+        /**
+         * Send the request.
+         */
+
+        //$request->DetailLevel = ['ReturnAll'];
+        $request->Query = "Toshiba 32L3753DB 32-Inch Smart Full HD LED TV with Built-in Freeview Play - Black (2017 Model)";
+
+        /*$request->OutputSelector = [
+            'CategoryArray.Category.CategoryID',
+            'CategoryArray.Category.CategoryParentID',
+            'CategoryArray.Category.CategoryLevel',
+            'CategoryArray.Category.CategoryName'
+        ];*/
+        /**
+         * Send the request.
+         */
+        $response = $service->getSuggestedCategories($request);
+
+        $this->pre($response);exit;
+        /**
+         * Output the result of calling the service operation.
+         */
+        if (isset($response->Errors)) {
+            foreach ($response->Errors as $error) {
+                printf(
+                    "%s: %s\n%s\n\n",
+                    $error->SeverityCode === Enums\SeverityCodeType::C_ERROR ? 'Error' : 'Warning',
+                    $error->ShortMessage,
+                    $error->LongMessage
+                );
+            }
+        }
+        if ($response->Ack !== 'Failure') {
+            /**
+             * For the US site this will output approximately 18,000 categories.
+             */
+            foreach ($response->CategoryArray->Category as $category) {
+                printf(
+                    "Level %s : %s (%s) : Parent ID %s\n",
+                    $category->CategoryLevel,
+                    $category->CategoryName,
+                    $category->CategoryID,
+                    $category->CategoryParentID[0]
+                );
+            }
+        }
+
+        exit;
+
+    }
+
 
 
     function listing_review_approve()
@@ -768,6 +846,7 @@ class ListingsController extends AppController {
             $mens_bottom_size_categories = array('57989');
             $womens_bottom_size_categories = array('11554');
             $mens_us_shoe_size_categories = array('24087');
+            $variation_type_categories = array('20696');
 
             //Item Variations (if available)
             if(!empty($variations_dimentions) && $withVariations)
@@ -790,6 +869,8 @@ class ListingsController extends AppController {
                         $variations_dimentions_key = "Bottoms Size (Women's)";
                     }elseif($variations_dimentions_key == "Size" && in_array($primaryCategory, $mens_us_shoe_size_categories)){
                         $variations_dimentions_key = "US Shoe Size (Men's)";
+                    }elseif($variations_dimentions_key == "Style" && in_array($primaryCategory, $variation_type_categories)){
+                        $variations_dimentions_key = "Type";
                     }
                     $nameValue->Name = $variations_dimentions_key;
                     $nameValue->Value = $variations_dimentions_values;
@@ -838,6 +919,8 @@ class ListingsController extends AppController {
                                 $var_items_value_value->Name = "Bottoms Size (Women's)";
                             } elseif($var_items_value_value->Name == "Size" && in_array($primaryCategory, $mens_us_shoe_size_categories)){
                                 $var_items_value_value->Name = "US Shoe Size (Men's)";
+                            } elseif($var_items_value_value->Name == "Style" && in_array($primaryCategory, $variation_type_categories)){
+                                $var_items_value_value->Name = "Type";
                             }
                             //var_dump($var_items_value_value->Name);
                             $nameValue->Name = $var_items_value_value->Name;
@@ -872,6 +955,9 @@ class ListingsController extends AppController {
                             continue;
                         }
 
+                        if($variations_images_key == "Style" && in_array($primaryCategory, $variation_type_categories)){
+                            $variations_images_key = "Type";
+                        }
                         $pictures->VariationSpecificName = $variations_images_key;
                         foreach ($variations_images_value as $variations_attrimages_key => $variations_attrimages_value)
                         {
@@ -997,6 +1083,8 @@ class ListingsController extends AppController {
                                             $specific->Name = "Bottoms Size (Women's)";
                                         } elseif($var_items_value_value->Name == "Size" && in_array($primaryCategory, $mens_us_shoe_size_categories)){
                                             $specific->Name = "US Shoe Size (Men's)";
+                                        } elseif($var_items_value_value->Name == "Style" && in_array($primaryCategory, $variation_type_categories)){
+                                            $specific->Name = "Type";
                                         }
                                         $specific->Value[] = $var_items_value_value->Value;
                                         $item->ItemSpecifics->NameValueList[] = $specific;

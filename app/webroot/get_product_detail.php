@@ -16,6 +16,7 @@
  */
 session_start();
 include('function.php');
+include('constant.php');
 //require_once ("config.php");
 
 require_once "vendor/autoload.php";
@@ -26,6 +27,13 @@ define('AWS_API_SECRET_KEY', 'duy/xH0o6oLKbUxge7wO8fnCcPiDGqco9kmLaW5m');
 //define('AWS_ASSOCIATE_TAG', 'shoes');
 define('AWS_ASSOCIATE_TAG', 'dropshipping7-20');
 define('AWS_ANOTHER_ASSOCIATE_TAG', '');
+
+// [[CUSTOM]] FOR EBAY
+require_once __DIR__.'/../../vendor/autoload.php';
+use \DTS\eBaySDK\Constants;
+use \DTS\eBaySDK\Trading\Services;
+use \DTS\eBaySDK\Trading\Types;
+use \DTS\eBaySDK\Trading\Enums;
 
 $country_cod = 'com';
 if(isset($_REQUEST['sourceid']) && $_REQUEST['sourceid']==2)
@@ -292,6 +300,55 @@ if(!empty($response))
             $add_product_array['a_cat_id'] = $awsCategories[0]->id;
         }
 
+        // [[CUSTOM]] // for ebay Suggested Category Id
+        if(isset($_REQUEST['sourceid']) && $_REQUEST['sourceid']==2)
+        {
+            $conSiteId = Constants\SiteIds::GB;
+        }
+        else {
+            $conSiteId = Constants\SiteIds::US;
+        }
+        
+        $serviceSug = new Services\TradingService([
+            'credentials' => [
+
+                        'devId' => EBAY_LIVE_DEVID,
+
+                        'appId' => EBAY_LIVE_APPID,
+
+                        'certId' => EBAY_LIVE_CERTID,
+
+                    ],
+            'siteId'      => $conSiteId
+        ]);
+        
+        $requestSug = new Types\GetSuggestedCategoriesRequestType();
+        
+        $requestSug->RequesterCredentials = new Types\CustomSecurityHeaderType();
+        $requestSug->RequesterCredentials->eBayAuthToken = EBAY_LIVE_AUTHTOKEN;
+        
+        $requestSug->Query = $add_product_array['title'];
+
+        $responseSug = $serviceSug->getSuggestedCategories($requestSug);
+
+        if(!empty($responseSug) && isset($responseSug->SuggestedCategoryArray->SuggestedCategory))
+        {
+
+            foreach ($responseSug->SuggestedCategoryArray->SuggestedCategory as $category) {
+                
+                $add_product_array['ebay_cat_id'] = $category->Category->CategoryID;
+                break;
+                /*printf(
+                    "%s (%s) : Parent ID %s<br>",
+                    $category->CategoryName,
+                    $category->CategoryID,
+                    $category->CategoryParentID[0]
+                );*/
+            }
+        }
+        // [[CUSTOM]] // for ebay Suggested Category Id
+
+
         // for SKU [[CUSTOM]]
         if(!empty($def_sku_prefix))
         {
@@ -303,14 +360,20 @@ if(!empty($response))
         }
         // for SKU [[CUSTOM]]
 
+        //pre($response);
         //pre($add_product_array);exit;
 
 
-        $TotalVariations = (int)$response['Items']['Item']['Variations']['TotalVariations'];
-
-        if(isset($response['Items']['Item']['Variations']) && $TotalVariations > 0)
+        if(isset($response['Items']['Item']['Variations']))
         {
-            $ProductVariations = $response['Items']['Item']['Variations'];
+            $TotalVariations = (int)$response['Items']['Item']['Variations']['TotalVariations'];
+            
+            if($TotalVariations > 0)
+            {
+                $ProductVariations = $response['Items']['Item']['Variations'];
+            } else {
+                $ProductVariations = "";
+            }
         }
         else
         {
