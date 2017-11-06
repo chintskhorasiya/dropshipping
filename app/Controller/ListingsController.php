@@ -199,20 +199,28 @@ class ListingsController extends AppController {
 
             $form_submit = 2;
 
-            $awnid = $this->data['Listing']['content'];
+            $awnidStr = $this->data['Listing']['content'];
+            
+            $awnidArr = explode(PHP_EOL, $awnidStr);
 
-            //echo "Review and List";
+            $awnid = array();
 
-            $check_content = $this->check_url($this->data['Listing']['content']);
-
-            if($check_content==1)
-
+            foreach($awnidArr as $singleawn)
             {
+                $check_content = $this->check_url($singleawn);
 
-                //$awnid = $this->get_awnid($this->data['Listing']['content']);
-                $awnid = $this->get_asin($awnid); // [[CUSTOM]] // to get correct ASIN number for amazon product
+                if($check_content==1)
 
+                {
+
+                    $awnid[] = $this->get_asin($singleawn); // [[CUSTOM]] // to get correct ASIN number for amazon product
+
+                } else {
+                    $awnid[] = $singleawn;
+                }
             }
+
+            $awnid = implode(",", $awnid);
 
         }
 

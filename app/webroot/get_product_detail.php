@@ -61,7 +61,7 @@ $conf
 $apaiIo = new ApaiIO($conf);
 
 $awnid = $_GET['awnid'];
-//pre($_REQUEST);
+pre($awnid);
 //pre($apaiIo);
 //exit;
 
@@ -76,13 +76,13 @@ $awnid = $_GET['awnid'];
 
 $lookup = new Lookup();
 //$lookup->setIdType('ASIN');
-$lookup->setResponseGroup(array('Large', 'VariationMatrix', 'VariationSummary'
+$lookup->setResponseGroup(array('Large', 'OfferFull', 'VariationMatrix', 'VariationSummary'
 , 'VariationOffers')); // More detailed information
 //$lookup->setItemId('B071FVJ9PJ');
 //$lookup->setItemId('B06VW5QNBF');
 $lookup->setItemId($awnid);
 $lookup->setCondition('All');
-$lookup->setMerchantId('Amazon');
+//$lookup->setMerchantId('Amazon');
 $response = $apaiIo->runOperation($lookup);
 
 $response = json_decode (json_encode (simplexml_load_string ($response)), true);
@@ -104,415 +104,466 @@ if(!empty($response))
         $page_url = DEFAULT_URL.'listings/listing_requests/msg:'.$error;
         header('Location: '.$page_url);
         exit;
-    }
+    }/*
     elseif (isset($response['Items']['Item']['Offers']['TotalOffers']) && $response['Items']['Item']['Offers']['TotalOffers'] <= 0)
     {
         $error = "This product does not sell by Amazon Seller";
         $page_url = DEFAULT_URL.'listings/listing_requests/msg:'.$error;
         header('Location: '.$page_url);
         exit;
-    }
+    }*/
     else
     {
-        //pre($response);
-        //exit;
-        // categories
-        $browseNodes = $response['Items']['Item']['BrowseNodes']['BrowseNode'];
-        if(is_array($browseNodes) && isset($browseNodes[0])){
-
-            foreach ($browseNodes as $browseNode) {
-                //pre($browseNode);
-                $nodeJsonString = "[";
-                $nodeJsonString .= '{"id":'.$browseNode['BrowseNodeId'].',"name":"'.$browseNode['Name'].'"';
-                //echo $nodeJsonString;
-                $awsCategories[] = json_decode(getAncestors($browseNode['Ancestors'], $nodeJsonString));
-            }
-
-        } else {
-
-            $browseNode = $browseNodes;
-            //pre($browseNode);exit;
-            $nodeJsonString = "[";
-            $nodeJsonString .= '{"id":'.$browseNode['BrowseNodeId'].',"name":"'.$browseNode['Name'].'"';
-            $finalResult = getAncestors($browseNode['Ancestors'], $nodeJsonString);
-            $awsCategories = json_decode($finalResult);
-
+        //B01E3XO44W
+        
+        if(!isset($response['Items']['Item'][0])){
+            $tempFirstItem = $response['Items']['Item'];
+            unset($response['Items']['Item']);
+            $response['Items']['Item'][0] = $tempFirstItem;
         }
-        // categories 
+
+        //pre($response['Items']['Item']);exit;
 
         $add_product_array = array();
-        $get_product_attribute = $response['Items']['Item']['ItemAttributes'];
-        $offer_summary = $response['Items']['Item']['OfferSummary'];
 
-        
-        $image_counter =  count($response['Items']['Item']['ImageSets']['ImageSet']);
-        $image_arr = $response['Items']['Item']['ImageSets']['ImageSet'];
-        //pre($image_arr);
-
-        $new_image_array = array();
-        $picturexmldata = '';
-        for($i=0;$i<count($image_arr);$i++)
+        foreach ($response['Items']['Item'] as $responseNum => $responseItem)
         {
-            $new_image_array[$i] = $image_arr[$i]['LargeImage']['URL'];
-        }
+            var_dump($responseNum);
+            //pre($responseItem);
 
-        $def_qty = (int) getDefaultQuantity($_GET['userid'], $_GET['sourceid']);
-        $def_sku_prefix = getDefaultSkuPrefix($_GET['userid'], $_GET['sourceid']);
+            // categories
+            $browseNodes = $responseItem['BrowseNodes']['BrowseNode'];
+            if(is_array($browseNodes) && isset($browseNodes[0])){
 
-        // for QTY [[CUSTOM]]
-        
-        $totalOffers = (int) $response['Items']['Item']['Offers']['TotalOffers'];
-        
-        if($totalOffers > 0){
-            if(!empty($def_qty))
-            {
-                $add_product_array['qty'] = $def_qty;
-            }
-            else
-            {
-                $add_product_array['qty'] = "";
-            }
-        } else {
-            $add_product_array['qty'] = 0;
-        }
-
-        //var_dump($add_product_array['qty']);exit;
-
-        // for QTY [[CUSTOM]]
-
-        if(isset($response['Items']['Item']['Offers']['Offer']) && isset($response['Items']['Item']['Offers']['Offer'][0]))
-        {
-            $price = (isset($response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['Price']['Amount']))?$response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['Price']['Amount']:'';
-            //var_dump($price);
-            $amount_save = (isset($response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['AmountSaved']['Amount']))?$response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['AmountSaved']['Amount']:'';
-            $sale_price = (isset($response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['SalePrice']['Amount']))?$response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['SalePrice']['Amount']:'';
-            $percentage_save = (isset($response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['PercentageSaved']))?$response['Items']['Item']['Offers']['Offer'][0]['OfferListing']['PercentageSaved']:'';
-        }
-        else
-        {
-            
-            $price = (isset($response['Items']['Item']['Offers']['Offer']['OfferListing']['Price']['Amount']))?$response['Items']['Item']['Offers']['Offer']['OfferListing']['Price']['Amount']:'';
-            //var_dump($price);
-            $amount_save = (isset($response['Items']['Item']['Offers']['Offer']['OfferListing']['AmountSaved']['Amount']))?$response['Items']['Item']['Offers']['Offer']['OfferListing']['AmountSaved']['Amount']:'';
-            $sale_price = (isset($response['Items']['Item']['Offers']['Offer']['OfferListing']['SalePrice']['Amount']))?$response['Items']['Item']['Offers']['Offer']['OfferListing']['SalePrice']['Amount']:'';
-            $percentage_save = (isset($response['Items']['Item']['Offers']['Offer']['OfferListing']['PercentageSaved']))?$response['Items']['Item']['Offers']['Offer']['OfferListing']['PercentageSaved']:'';
-        }
-
-        $new_price = '';
-        if($sale_price=='' && $amount_save!='')
-        {
-            $new_price = $price + $amount_save;
-        }
-        else if($sale_price!='' && $amount_save!='')
-        {
-            $price = $sale_price;
-            $new_price = $sale_price + $amount_save;
-        }
-
-        //var_dump($price);
-
-        $feature_array = $newfeature_array = array();
-
-        //Set variable into product data
-        $add_product_array['user_id'] = $_GET['userid'];
-        $add_product_array['source_id'] = $_GET['sourceid'];
-        $add_product_array['asin_no'] = $_GET['awnid'];
-        $add_product_array['pageurl'] = urldecode($response['Items']['Item']['DetailPageURL']);
-        $add_product_array['title'] = addslashes($get_product_attribute['Title']);
-        $add_product_array['main_image'] = (isset($response['Items']['Item']['LargeImage']['URL']))?$response['Items']['Item']['LargeImage']['URL']:'';
-        
-        // [[CUSTOM]] changed image sequece
-        $newImageSetArr = array();
-        $newImagesArr = array();
-        if(isset($response['Items']['Item']['ImageSets']['ImageSet'][0]))
-        {
-            $totalImgs = count($response['Items']['Item']['ImageSets']['ImageSet']);
-            foreach ($response['Items']['Item']['ImageSets']['ImageSet'] as $imgsetId => $imgsetImg) {
-                if($imgsetId == ($totalImgs - 1) && !in_array($imgsetImg['LargeImage']['URL'], $newImagesArr)){
-                    array_push($newImageSetArr, $imgsetImg);
-                    array_push($newImagesArr, $imgsetImg['LargeImage']['URL']);
+                foreach ($browseNodes as $browseNode) {
+                    //pre($browseNode);
+                    $nodeJsonString = "[";
+                    $nodeJsonString .= '{"id":'.$browseNode['BrowseNodeId'].',"name":"'.$browseNode['Name'].'"';
+                    //echo $nodeJsonString;
+                    $awsCategories[] = json_decode(getAncestors($browseNode['Ancestors'], $nodeJsonString));
                 }
-            }
-            foreach ($response['Items']['Item']['ImageSets']['ImageSet'] as $imgsetId => $imgsetImg) {
-                if($imgsetId < ($totalImgs - 1) && !in_array($imgsetImg['LargeImage']['URL'], $newImagesArr)){
-                    array_push($newImageSetArr, $imgsetImg);
-                    array_push($newImagesArr, $imgsetImg['LargeImage']['URL']);
-                }
-            }
-            
-        } else {
-            $newImageSetArr = $response['Items']['Item']['ImageSets']['ImageSet'];
-        }
-        // [[CUSTOM]] changed image sequece
 
-        //pre($newImageSetArr);
-        //pre($newImagesArr);exit;
-        //$add_product_array['image_set'] = (isset($response['Items']['Item']['ImageSets']['ImageSet']))?json_encode($response['Items']['Item']['ImageSets']['ImageSet']):'';
-        $add_product_array['image_set'] = (isset($newImageSetArr)?json_encode($newImageSetArr):'');
-
-        $add_product_array['binding'] = (isset($get_product_attribute['Binding']))?$get_product_attribute['Binding']:'';
-        $add_product_array['brand'] = $get_product_attribute['Brand'];
-        $add_product_array['color'] = (isset($get_product_attribute['Color']))?$get_product_attribute['Color']:'';
-        $add_product_array['features'] = (isset($get_product_attribute['Feature']))?addslashes(json_encode($get_product_attribute['Feature'])):'';
-        //echo stripslashes ($add_product_array['features']);
-        $add_product_array['item_dimension'] = (isset($get_product_attribute['ItemDimensions']))?json_encode($get_product_attribute['ItemDimensions']):'';
-        $add_product_array['currency_code'] = (isset($get_product_attribute['ListPrice']['CurrencyCode']))?$get_product_attribute['ListPrice']['CurrencyCode']:'';
-//        $add_product_array['list_amount'] = $get_product_attribute['ListPrice']['Amount'];
-        $add_product_array['list_amount'] = $price;
-        //check price and sales prices
-
-        $add_product_array['new_amount'] = $new_price;
-        $add_product_array['sale_amount'] = $sale_price;
-        $add_product_array['save_amount'] = (isset($amount_save) && $amount_save!='')?$amount_save:'';
-        $add_product_array['model'] = (isset($get_product_attribute['Model']))?$get_product_attribute['Model']:'';
-        $add_product_array['mpn'] = (isset($get_product_attribute['MPN']))?$get_product_attribute['MPN']:'';
-        $add_product_array['upc'] = (isset($get_product_attribute['UPC']))?$get_product_attribute['UPC']:'';
-        $add_product_array['product_group'] = (isset($get_product_attribute['ProductGroup']))?$get_product_attribute['ProductGroup']:'';
-
-        $add_item_specification = array();
-        if(isset($get_product_attribute['Brand']))
-            $add_item_specification['Brand'] = $get_product_attribute['Brand'];
-        if(isset($get_product_attribute['Model']))
-            $add_item_specification['Model'] = $get_product_attribute['Model'];
-        if(isset($get_product_attribute['MPN']))
-            $add_item_specification['MPN'] = $get_product_attribute['MPN'];
-        if(isset($get_product_attribute['UPC']))
-            $add_item_specification['UPC'] = $get_product_attribute['UPC'];
-        if(isset($get_product_attribute['Feature']))
-            $add_item_specification['Features'] = (is_array($get_product_attribute['Feature']) ? implode(",", $get_product_attribute['Feature']): $get_product_attribute['Feature']);
-
-        $add_product_array['item_specification'] = (isset($add_item_specification))?addslashes(json_encode($add_item_specification)):'';
-        //`warranty`, `description`, `submit_status`, `status`, `created_date`
-        $add_product_array['warranty'] = isset($get_product_attribute['Warranty'])?$get_product_attribute['Warranty']:'';
-        //pre($response['Items']['Item']);exit;
-        $add_product_array['description'] = (!empty($response['Items']['Item']['EditorialReviews']['EditorialReview']['Content']))?addslashes($response['Items']['Item']['EditorialReviews']['EditorialReview']['Content']):'';
-        //$add_product_array['page_content'] = addslashes(json_encode(($response['Items'])));
-        $add_product_array['submit_status'] = ($_GET['form_submit']==1)?'List Now':'Review and List';
-        $add_product_array['status'] = 0;
-
-        // [[CUSTOM]]
-        if(is_array($awsCategories[0]))
-        {
-            $add_product_array['a_cat_id'] = $awsCategories[0][0]->id;
-        }
-        else
-        {
-            $add_product_array['a_cat_id'] = $awsCategories[0]->id;
-        }
-
-        // [[CUSTOM]] // for ebay Suggested Category Id
-        if(isset($_REQUEST['sourceid']) && $_REQUEST['sourceid']==2)
-        {
-            $conSiteId = Constants\SiteIds::GB;
-        }
-        else {
-            $conSiteId = Constants\SiteIds::US;
-        }
-        
-        $serviceSug = new Services\TradingService([
-            'credentials' => [
-
-                        'devId' => EBAY_LIVE_DEVID,
-
-                        'appId' => EBAY_LIVE_APPID,
-
-                        'certId' => EBAY_LIVE_CERTID,
-
-                    ],
-            'siteId'      => $conSiteId
-        ]);
-        
-        $requestSug = new Types\GetSuggestedCategoriesRequestType();
-        
-        $requestSug->RequesterCredentials = new Types\CustomSecurityHeaderType();
-        $requestSug->RequesterCredentials->eBayAuthToken = EBAY_LIVE_AUTHTOKEN;
-        
-        $requestSug->Query = $add_product_array['title'];
-
-        $responseSug = $serviceSug->getSuggestedCategories($requestSug);
-
-        if(!empty($responseSug) && isset($responseSug->SuggestedCategoryArray->SuggestedCategory))
-        {
-
-            foreach ($responseSug->SuggestedCategoryArray->SuggestedCategory as $category) {
-                
-                $add_product_array['ebay_cat_id'] = $category->Category->CategoryID;
-                break;
-                /*printf(
-                    "%s (%s) : Parent ID %s<br>",
-                    $category->CategoryName,
-                    $category->CategoryID,
-                    $category->CategoryParentID[0]
-                );*/
-            }
-        }
-        // [[CUSTOM]] // for ebay Suggested Category Id
-
-
-        // for SKU [[CUSTOM]]
-        if(!empty($def_sku_prefix))
-        {
-            $add_product_array['sku'] = $def_sku_prefix.$add_product_array['asin_no'];
-        }
-        else
-        {
-            $add_product_array['sku'] = $add_product_array['asin_no'];
-        }
-        // for SKU [[CUSTOM]]
-
-        //pre($response);
-        //pre($add_product_array);exit;
-
-
-        if(isset($response['Items']['Item']['Variations']))
-        {
-            $TotalVariations = (int)$response['Items']['Item']['Variations']['TotalVariations'];
-            
-            if($TotalVariations > 0)
-            {
-                $ProductVariations = $response['Items']['Item']['Variations'];
             } else {
-                $ProductVariations = "";
+
+                $browseNode = $browseNodes;
+                //pre($browseNode);exit;
+                $nodeJsonString = "[";
+                $nodeJsonString .= '{"id":'.$browseNode['BrowseNodeId'].',"name":"'.$browseNode['Name'].'"';
+                $finalResult = getAncestors($browseNode['Ancestors'], $nodeJsonString);
+                $awsCategories = json_decode($finalResult);
+
             }
-        }
-        else
-        {
-            $ParentASIN = $response['Items']['Item']['ParentASIN'];
-            $lookup = new Lookup();
-            $lookup->setIdType('ASIN');
-            $lookup->setResponseGroup(array('Variations', 'VariationMatrix', 'VariationSummary', 
-'VariationOffers')); // More detailed information
-            $lookup->setItemId($ParentASIN);
-            $lookup->setMerchantId('Amazon');
-            $lookup->setCondition('All');
-            $var_response = $apaiIo->runOperation($lookup);
-            $var_response = json_decode (json_encode (simplexml_load_string ($var_response)), true);
+            // categories 
 
-            $TotalVariations = (int)$var_response['Items']['Item']['Variations']['TotalVariations'];
+            if($responseItem['Offers']['TotalOffers'] <= 0){
+                continue;
+            }
 
-            if(isset($var_response['Items']['Item']['Variations']) && $TotalVariations > 0)
+            $gotOffer = false;
+            if(isset($responseItem['Offers']['Offer']) && isset($responseItem['Offers']['Offer'][0]))
             {
-                $ProductVariations = $var_response['Items']['Item']['Variations'];
+                foreach ($responseItem['Offers']['Offer'] as $offerNum => $offerData)
+                {
+                    //pre($offerData);
+                    if($offerData['OfferListing']['IsEligibleForPrime'] == "1")
+                    {
+                        $price = (isset($offerData['OfferListing']['Price']['Amount']))?$offerData['OfferListing']['Price']['Amount']:'';
+                        //var_dump($price);
+                        $amount_save = (isset($offerData['OfferListing']['AmountSaved']['Amount']))?$offerData['OfferListing']['AmountSaved']['Amount']:'';
+                        $sale_price = (isset($offerData['OfferListing']['SalePrice']['Amount']))?$offerData['OfferListing']['SalePrice']['Amount']:'';
+                        $percentage_save = (isset($offerData['OfferListing']['PercentageSaved']))?$offerData['OfferListing']['PercentageSaved']:'';
+                        $gotOffer = true;
+                        break;
+                    }  
+                }
             }
             else
             {
-                $ProductVariations = "";
-            }
-        }
-        //pre($ProductVariations);exit;
-        if(!empty($ProductVariations))
-        {
-           // for product variations_dimensions
-           $add_product_array['variations_dimentions'] = array();
-           $add_product_array['variations_items'] = array();
-           $add_product_array['variations_images'] = array();
-           //pre($add_product_array['variations_dimentions']);exit;
-           // for product variations_dimensions
-
-           //for product varions_dimentions values
-           foreach ($ProductVariations['Item'] as $pvItemKey => $pvItemValue)
-           {
-                //var_dump($pvItemValue['VariationAttributes']['VariationAttribute']);exit;
-                if(isset($pvItemValue['VariationAttributes']['VariationAttribute'][0]) && is_array($pvItemValue['VariationAttributes']['VariationAttribute'][0]))
+                if($responseItem['Offers']['Offer']['OfferListing']['IsEligibleForPrime'] == "1")
                 {
-
-                } else {
-                    $tmpArr = $pvItemValue['VariationAttributes']['VariationAttribute'];
-                    $pvItemValue['VariationAttributes']['VariationAttribute'] = array();
-                    $pvItemValue['VariationAttributes']['VariationAttribute'][0] = $tmpArr;
+                    $price = (isset($responseItem['Offers']['Offer']['OfferListing']['Price']['Amount']))?$responseItem['Offers']['Offer']['OfferListing']['Price']['Amount']:'';
+                    //var_dump($price);
+                    $amount_save = (isset($responseItem['Offers']['Offer']['OfferListing']['AmountSaved']['Amount']))?$responseItem['Offers']['Offer']['OfferListing']['AmountSaved']['Amount']:'';
+                    $sale_price = (isset($responseItem['Offers']['Offer']['OfferListing']['SalePrice']['Amount']))?$responseItem['Offers']['Offer']['OfferListing']['SalePrice']['Amount']:'';
+                    $percentage_save = (isset($responseItem['Offers']['Offer']['OfferListing']['PercentageSaved']))?$responseItem['Offers']['Offer']['OfferListing']['PercentageSaved']:'';
+                    $gotOffer = true;
                 }
+            }
 
-                //var_dump($pvItemValue['VariationAttributes']['VariationAttribute']);exit;
+            if(!$gotOffer){
+                continue;
+            }
 
-                foreach ($pvItemValue['VariationAttributes']['VariationAttribute'] as $pvItemVAKey => $pvItemVAValue)
+            $get_product_attribute = $responseItem['ItemAttributes'];
+            $offer_summary = $responseItem['OfferSummary'];
+
+            
+            $image_counter =  count($responseItem['ImageSets']['ImageSet']);
+            $image_arr = $responseItem['ImageSets']['ImageSet'];
+            //pre($image_arr);
+
+            $new_image_array = array();
+            $picturexmldata = '';
+            for($i=0;$i<count($image_arr);$i++)
+            {
+                $new_image_array[$i] = $image_arr[$i]['LargeImage']['URL'];
+            }
+
+            $def_qty = (int) getDefaultQuantity($_GET['userid'], $_GET['sourceid']);
+            $def_sku_prefix = getDefaultSkuPrefix($_GET['userid'], $_GET['sourceid']);
+
+            // for QTY [[CUSTOM]]
+            
+            $totalOffers = (int) $responseItem['Offers']['TotalOffers'];
+            
+            if($totalOffers > 0){
+                if(!empty($def_qty))
                 {
+                    $add_product_array[$responseNum]['qty'] = $def_qty;
+                }
+                else
+                {
+                    $add_product_array[$responseNum]['qty'] = "";
+                }
+            } else {
+                $add_product_array[$responseNum]['qty'] = 0;
+            }
 
-                   if(is_array($add_product_array['variations_dimentions'][$pvItemVAValue['Name']]))
-                   {
-                    if(!in_array($pvItemVAValue['Value'], $add_product_array['variations_dimentions'][$pvItemVAValue['Name']])){
-                        array_push($add_product_array['variations_dimentions'][$pvItemVAValue['Name']], $pvItemVAValue['Value']);
+            //pre($add_product_array);
+
+            // for QTY [[CUSTOM]]
+
+            $new_price = '';
+            if($sale_price=='' && $amount_save!='')
+            {
+                $new_price = $price + $amount_save;
+            }
+            else if($sale_price!='' && $amount_save!='')
+            {
+                $price = $sale_price;
+                $new_price = $sale_price + $amount_save;
+            }
+
+            //var_dump($price);
+
+            $feature_array = $newfeature_array = array();
+
+            //Set variable into product data
+            $add_product_array[$responseNum]['user_id'] = $_GET['userid'];
+            $add_product_array[$responseNum]['source_id'] = $_GET['sourceid'];
+            $add_product_array[$responseNum]['asin_no'] = $responseItem['ASIN'];
+            $add_product_array[$responseNum]['pageurl'] = urldecode($responseItem['DetailPageURL']);
+            $add_product_array[$responseNum]['title'] = addslashes($get_product_attribute['Title']);
+            $add_product_array[$responseNum]['main_image'] = (isset($responseItem['LargeImage']['URL']))?$responseItem['LargeImage']['URL']:'';
+
+            //pre($add_product_array);
+            
+            // [[CUSTOM]] changed image sequece
+            $newImageSetArr = array();
+            $newImagesArr = array();
+            if(isset($responseItem['ImageSets']['ImageSet'][0]))
+            {
+                $totalImgs = count($responseItem['ImageSets']['ImageSet']);
+                foreach ($responseItem['ImageSets']['ImageSet'] as $imgsetId => $imgsetImg) {
+                    if($imgsetId == ($totalImgs - 1) && !in_array($imgsetImg['LargeImage']['URL'], $newImagesArr)){
+                        array_push($newImageSetArr, $imgsetImg);
+                        array_push($newImagesArr, $imgsetImg['LargeImage']['URL']);
                     }
-                   }
-                   else
-                   {
-                    $add_product_array['variations_dimentions'][$pvItemVAValue['Name']] = array();
-                    if(!in_array($pvItemVAValue['Value'], $add_product_array['variations_dimentions'][$pvItemVAValue['Name']])){
-                        array_push($add_product_array['variations_dimentions'][$pvItemVAValue['Name']], $pvItemVAValue['Value']);
+                }
+                foreach ($responseItem['ImageSets']['ImageSet'] as $imgsetId => $imgsetImg) {
+                    if($imgsetId < ($totalImgs - 1) && !in_array($imgsetImg['LargeImage']['URL'], $newImagesArr)){
+                        array_push($newImageSetArr, $imgsetImg);
+                        array_push($newImagesArr, $imgsetImg['LargeImage']['URL']);
                     }
-                   }
+                }
+                
+            } else {
+                $newImageSetArr = $responseItem['ImageSets']['ImageSet'];
+            }
+            // [[CUSTOM]] changed image sequece
+
+            //pre($newImageSetArr);
+            //pre($newImagesArr);exit;
+            //$add_product_array[$responseNum]['image_set'] = (isset($responseItem['ImageSets']['ImageSet']))?json_encode($responseItem['ImageSets']['ImageSet']):'';
+            $add_product_array[$responseNum]['image_set'] = (isset($newImageSetArr)?json_encode($newImageSetArr):'');
+
+            $add_product_array[$responseNum]['binding'] = (isset($get_product_attribute['Binding']))?$get_product_attribute['Binding']:'';
+            $add_product_array[$responseNum]['brand'] = $get_product_attribute['Brand'];
+            $add_product_array[$responseNum]['color'] = (isset($get_product_attribute['Color']))?$get_product_attribute['Color']:'';
+            $add_product_array[$responseNum]['features'] = (isset($get_product_attribute['Feature']))?addslashes(json_encode($get_product_attribute['Feature'])):'';
+            //echo stripslashes ($add_product_array['features']);
+            $add_product_array[$responseNum]['item_dimension'] = (isset($get_product_attribute['ItemDimensions']))?json_encode($get_product_attribute['ItemDimensions']):'';
+            $add_product_array[$responseNum]['currency_code'] = (isset($get_product_attribute['ListPrice']['CurrencyCode']))?$get_product_attribute['ListPrice']['CurrencyCode']:'';
+    //        $add_product_array[$responseNum]['list_amount'] = $get_product_attribute['ListPrice']['Amount'];
+            $add_product_array[$responseNum]['list_amount'] = $price;
+            //check price and sales prices
+
+            $add_product_array[$responseNum]['new_amount'] = $new_price;
+            $add_product_array[$responseNum]['sale_amount'] = $sale_price;
+            $add_product_array[$responseNum]['save_amount'] = (isset($amount_save) && $amount_save!='')?$amount_save:'';
+            $add_product_array[$responseNum]['model'] = (isset($get_product_attribute['Model']))?$get_product_attribute['Model']:'';
+            $add_product_array[$responseNum]['mpn'] = (isset($get_product_attribute['MPN']))?$get_product_attribute['MPN']:'';
+            $add_product_array[$responseNum]['upc'] = (isset($get_product_attribute['UPC']))?$get_product_attribute['UPC']:'';
+            $add_product_array[$responseNum]['product_group'] = (isset($get_product_attribute['ProductGroup']))?$get_product_attribute['ProductGroup']:'';
+
+            $add_item_specification = array();
+            if(isset($get_product_attribute['Brand']))
+                $add_item_specification['Brand'] = $get_product_attribute['Brand'];
+            if(isset($get_product_attribute['Model']))
+                $add_item_specification['Model'] = $get_product_attribute['Model'];
+            if(isset($get_product_attribute['MPN']))
+                $add_item_specification['MPN'] = $get_product_attribute['MPN'];
+            if(isset($get_product_attribute['UPC']))
+                $add_item_specification['UPC'] = $get_product_attribute['UPC'];
+            if(isset($get_product_attribute['Feature']))
+                $add_item_specification['Features'] = (is_array($get_product_attribute['Feature']) ? implode(",", $get_product_attribute['Feature']): $get_product_attribute['Feature']);
+
+            $add_product_array[$responseNum]['item_specification'] = (isset($add_item_specification))?addslashes(json_encode($add_item_specification)):'';
+            //`warranty`, `description`, `submit_status`, `status`, `created_date`
+            $add_product_array[$responseNum]['warranty'] = isset($get_product_attribute['Warranty'])?$get_product_attribute['Warranty']:'';
+            //pre($responseItem);exit;
+            $add_product_array[$responseNum]['description'] = (!empty($responseItem['EditorialReviews']['EditorialReview']['Content']))?addslashes($responseItem['EditorialReviews']['EditorialReview']['Content']):'';
+            //$add_product_array[$responseNum]['page_content'] = addslashes(json_encode(($response['Items'])));
+            $add_product_array[$responseNum]['submit_status'] = ($_GET['form_submit']==1)?'List Now':'Review and List';
+            $add_product_array[$responseNum]['status'] = 0;
+
+            // [[CUSTOM]]
+            if(is_array($awsCategories[0]))
+            {
+                $add_product_array[$responseNum]['a_cat_id'] = $awsCategories[0][0]->id;
+            }
+            else
+            {
+                $add_product_array[$responseNum]['a_cat_id'] = $awsCategories[0]->id;
+            }
+
+            //pre($add_product_array);
+
+            // [[CUSTOM]] // for ebay Suggested Category Id
+            if(isset($_REQUEST['sourceid']) && $_REQUEST['sourceid']==2)
+            {
+                $conSiteId = Constants\SiteIds::GB;
+            }
+            else {
+                $conSiteId = Constants\SiteIds::US;
+            }
+            
+            $serviceSug = new Services\TradingService([
+                'credentials' => [
+
+                            'devId' => EBAY_LIVE_DEVID,
+
+                            'appId' => EBAY_LIVE_APPID,
+
+                            'certId' => EBAY_LIVE_CERTID,
+
+                        ],
+                'siteId'      => $conSiteId
+            ]);
+            
+            $requestSug = new Types\GetSuggestedCategoriesRequestType();
+            
+            $requestSug->RequesterCredentials = new Types\CustomSecurityHeaderType();
+            $requestSug->RequesterCredentials->eBayAuthToken = EBAY_LIVE_AUTHTOKEN;
+            
+            $requestSug->Query = $add_product_array[$responseNum]['title'];
+
+            $responseSug = $serviceSug->getSuggestedCategories($requestSug);
+
+            if(!empty($responseSug) && isset($responseSug->SuggestedCategoryArray->SuggestedCategory))
+            {
+
+                foreach ($responseSug->SuggestedCategoryArray->SuggestedCategory as $category) {
+                    
+                    $add_product_array[$responseNum]['ebay_cat_id'] = $category->Category->CategoryID;
+                    break;
+                    /*printf(
+                        "%s (%s) : Parent ID %s<br>",
+                        $category->CategoryName,
+                        $category->CategoryID,
+                        $category->CategoryParentID[0]
+                    );*/
+                }
+            }
+            // [[CUSTOM]] // for ebay Suggested Category Id
 
 
-                   if(is_array($add_product_array['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']]))
-                   {
-                       if(!in_array($pvItemValue['LargeImage']['URL'], $add_product_array['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']])){
-                            array_push($add_product_array['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']], $pvItemValue['LargeImage']['URL']);
-                       }
-                   }
-                   else
-                   {
-                       $add_product_array['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']] = array();
-                       if(!in_array($pvItemValue['LargeImage']['URL'], $add_product_array['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']])){
-                            array_push($add_product_array['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']], $pvItemValue['LargeImage']['URL']);
-                       }
-                   }
-               }
+            // for SKU [[CUSTOM]]
+            if(!empty($def_sku_prefix))
+            {
+                $add_product_array[$responseNum]['sku'] = $def_sku_prefix.$add_product_array[$responseNum]['asin_no'];
+            }
+            else
+            {
+                $add_product_array[$responseNum]['sku'] = $add_product_array[$responseNum]['asin_no'];
+            }
+            // for SKU [[CUSTOM]]
 
-               $add_product_array['variations_items'][$pvItemKey]['sku'] = $def_sku_prefix.$pvItemValue['ASIN'];
-               $add_product_array['variations_items'][$pvItemKey]['qty'] = $def_qty;
-               
-               $variation_list_amount = $pvItemValue['ItemAttributes']['ListPrice']['Amount'];
-               $variation_offer_amount = $pvItemValue['Offers']['Offer']['OfferListing']['Price']['Amount'];
+            //pre($response);
+            //pre($add_product_array);
 
-               if(empty($variation_offer_amount)){
-                    $variation_amount = $variation_list_amount;
-               } else {
-                    $variation_amount = $variation_offer_amount;                
-               }
 
-               //var_dump($pvItemKey);
-               //var_dump($add_product_array['list_amount']);
-               if($pvItemKey == 0 && empty($add_product_array['list_amount']))
+            if(isset($responseItem['Variations']))
+            {
+                $TotalVariations = (int)$responseItem['Variations']['TotalVariations'];
+                
+                if($TotalVariations > 0)
+                {
+                    $ProductVariations = $responseItem['Variations'];
+                } else {
+                    $ProductVariations = "";
+                }
+            }
+            else
+            {
+                $ParentASIN = $responseItem['ParentASIN'];
+                $lookup = new Lookup();
+                $lookup->setIdType('ASIN');
+                $lookup->setResponseGroup(array('Variations', 'VariationMatrix', 'VariationSummary', 
+    'VariationOffers')); // More detailed information
+                $lookup->setItemId($ParentASIN);
+                //$lookup->setMerchantId('Amazon');
+                $lookup->setCondition('All');
+                $var_response = $apaiIo->runOperation($lookup);
+                $var_response = json_decode (json_encode (simplexml_load_string ($var_response)), true);
+
+                $TotalVariations = (int)$var_response['Items']['Item']['Variations']['TotalVariations'];
+
+                if(isset($var_response['Items']['Item']['Variations']) && $TotalVariations > 0)
+                {
+                    $ProductVariations = $var_response['Items']['Item']['Variations'];
+                }
+                else
+                {
+                    $ProductVariations = "";
+                }
+            }
+            //pre($ProductVariations);
+            if(!empty($ProductVariations))
+            {
+               // for product variations_dimensions
+               $add_product_array[$responseNum]['variations_dimentions'] = array();
+               $add_product_array[$responseNum]['variations_items'] = array();
+               $add_product_array[$responseNum]['variations_images'] = array();
+               //pre($add_product_array[$responseNum]['variations_dimentions']);exit;
+               // for product variations_dimensions
+
+               if(!isset($ProductVariations['Item'][0]))
                {
-                $add_product_array['list_amount'] = $variation_amount;
+                $tempFirstVariation = $ProductVariations['Item'];
+                unset($ProductVariations['Item']);
+                $ProductVariations['Item'][0] = $tempFirstVariation;
                }
 
-               $add_product_array['variations_items'][$pvItemKey]['price'] = $variation_amount;
-               $add_product_array['variations_items'][$pvItemKey]['attrs'] = $pvItemValue['VariationAttributes']['VariationAttribute'];
-               //$add_product_array['variations_items'][$pvItemKey]['price'] = 
-           }
+               //for product varions_dimentions values
+               foreach ($ProductVariations['Item'] as $pvItemKey => $pvItemValue)
+               {
+                    //pre($pvItemValue);
+                    //var_dump($pvItemValue['VariationAttributes']['VariationAttribute']);exit;
+                    if(isset($pvItemValue['VariationAttributes']['VariationAttribute'][0]) && is_array($pvItemValue['VariationAttributes']['VariationAttribute'][0]))
+                    {
 
-           if(!empty($add_product_array['variations_dimentions'])){
-            //pre($add_product_array['variations_dimentions']);
-            $add_product_array['variations_dimentions'] = json_encode($add_product_array['variations_dimentions']);
-           }
+                    } else {
+                        $tmpArr = $pvItemValue['VariationAttributes']['VariationAttribute'];
+                        $pvItemValue['VariationAttributes']['VariationAttribute'] = array();
+                        $pvItemValue['VariationAttributes']['VariationAttribute'][0] = $tmpArr;
+                    }
 
-           if(!empty($add_product_array['variations_items'])){
-            //pre($add_product_array['variations_items']);
-            $add_product_array['variations_items'] = json_encode($add_product_array['variations_items']);
-           }
+                    //var_dump($pvItemValue['VariationAttributes']['VariationAttribute']);exit;
 
-           if(!empty($add_product_array['variations_images'])){
-            //pre($add_product_array['variations_images']);exit;
-            $add_product_array['variations_images'] = json_encode($add_product_array['variations_images']);
-           }
+                    foreach ($pvItemValue['VariationAttributes']['VariationAttribute'] as $pvItemVAKey => $pvItemVAValue)
+                    {
 
-           //echo json_encode($add_product_array['variations_dimentions']);
-           //echo '<br>';
-           //echo json_encode($add_product_array['variations_items']);
-           //exit;
+                       if(is_array($add_product_array[$responseNum]['variations_dimentions'][$pvItemVAValue['Name']]))
+                       {
+                        if(!in_array($pvItemVAValue['Value'], $add_product_array[$responseNum]['variations_dimentions'][$pvItemVAValue['Name']])){
+                            array_push($add_product_array[$responseNum]['variations_dimentions'][$pvItemVAValue['Name']], $pvItemVAValue['Value']);
+                        }
+                       }
+                       else
+                       {
+                        $add_product_array[$responseNum]['variations_dimentions'][$pvItemVAValue['Name']] = array();
+                        if(!in_array($pvItemVAValue['Value'], $add_product_array[$responseNum]['variations_dimentions'][$pvItemVAValue['Name']])){
+                            array_push($add_product_array[$responseNum]['variations_dimentions'][$pvItemVAValue['Name']], $pvItemVAValue['Value']);
+                        }
+                       }
+
+
+                       if(is_array($add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']]))
+                       {
+                           if(!in_array($pvItemValue['LargeImage']['URL'], $add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']])){
+                                array_push($add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']], $pvItemValue['LargeImage']['URL']);
+                           }
+                       }
+                       else
+                       {
+                           $add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']] = array();
+                           if(!in_array($pvItemValue['LargeImage']['URL'], $add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']])){
+                                array_push($add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']], $pvItemValue['LargeImage']['URL']);
+                           }
+                       }
+                   }
+
+                   $add_product_array[$responseNum]['variations_items'][$pvItemKey]['sku'] = $def_sku_prefix.$pvItemValue['ASIN'];
+                   $add_product_array[$responseNum]['variations_items'][$pvItemKey]['qty'] = $def_qty;
+                   
+                   $variation_list_amount = $pvItemValue['ItemAttributes']['ListPrice']['Amount'];
+                   $variation_offer_amount = $pvItemValue['Offers']['Offer']['OfferListing']['Price']['Amount'];
+
+                   if(empty($variation_offer_amount)){
+                        $variation_amount = $variation_list_amount;
+                   } else {
+                        $variation_amount = $variation_offer_amount;                
+                   }
+
+                   //var_dump($pvItemKey);
+                   //var_dump($add_product_array['list_amount']);
+                   if($pvItemKey == 0 && empty($add_product_array[$responseNum]['list_amount']))
+                   {
+                    $add_product_array[$responseNum]['list_amount'] = $variation_amount;
+                   }
+
+                   $add_product_array[$responseNum]['variations_items'][$pvItemKey]['price'] = $variation_amount;
+                   $add_product_array[$responseNum]['variations_items'][$pvItemKey]['attrs'] = $pvItemValue['VariationAttributes']['VariationAttribute'];
+                   //$add_product_array[$responseNum]['variations_items'][$pvItemKey]['price'] = 
+               }
+
+               if(!empty($add_product_array[$responseNum]['variations_dimentions'])){
+                //pre($add_product_array['variations_dimentions']);
+                $add_product_array[$responseNum]['variations_dimentions'] = json_encode($add_product_array[$responseNum]['variations_dimentions']);
+               }
+
+               if(!empty($add_product_array[$responseNum]['variations_items'])){
+                //pre($add_product_array['variations_items']);
+                $add_product_array[$responseNum]['variations_items'] = json_encode($add_product_array[$responseNum]['variations_items']);
+               }
+
+               if(!empty($add_product_array[$responseNum]['variations_images'])){
+                //pre($add_product_array['variations_images']);exit;
+                $add_product_array[$responseNum]['variations_images'] = json_encode($add_product_array[$responseNum]['variations_images']);
+               }
+
+               $add_product_array[$responseNum]['created_date'] = date('Y-m-d H:i:s');
+               $add_product_array[$responseNum]['modified_date'] = date('Y-m-d H:i:s');
+
+               //echo json_encode($add_product_array['variations_dimentions']);
+               //echo '<br>';
+               //echo json_encode($add_product_array['variations_items']);
+               //exit;
+            }
+
+            //pre($response);
+            //pre($ProductVariations);
+            //pre($add_product_array);
+            //exit;
+            // [[CUSTOM]]
+            //import_categories($awsCategories, $_GET['sourceid']);
+            $sql_insert_product = insert_data('products', $add_product_array[$responseNum]);   
         }
 
-        //pre($response);
-        //pre($ProductVariations);
-        //pre($add_product_array);
-        //exit;
-        // [[CUSTOM]]
+        pre($add_product_array);exit;
 
-        $add_product_array['created_date'] = date('Y-m-d H:i:s');
-        $add_product_array['modified_date'] = date('Y-m-d H:i:s');
-
-        import_categories($awsCategories, $_GET['sourceid']);
-        $sql_insert_product = insert_data('products', $add_product_array);
+        //$sql_insert_product = insert_data('products', $add_product_array);exit;
 
         if($sql_insert_product!='')
         {
