@@ -61,6 +61,10 @@
 
                                 <?php if(isset($this->params['named']['msg'])){echo '<div style="padding: 10px 0px;"><span class="error-message">'.$this->params['named']['msg'].'</span></div>';}?>
 
+                                <?php if(isset($this->params['named']['succeed'])){echo '<div style="padding: 10px 0px;"><span class="success-message">'.base64_decode($this->params['named']['succeed']).'</span></div>';}?>
+                                <?php if(isset($this->params['named']['failed'])){echo '<div style="padding: 10px 0px;"><span class="error-message">'.base64_decode($this->params['named']['failed']).'</span></div>';}?>
+                                <?php if(isset($this->params['named']['existed'])){echo '<div style="padding: 10px 0px;"><span class="error-message">'.base64_decode($this->params['named']['existed']).'</span></div>';}?>
+
                                 <table class="display table table-bordered table-striped" id="dynamic-table">
                                     <thead>
                                         <tr>

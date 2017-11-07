@@ -156,7 +156,6 @@ class ListingsController extends AppController {
     function create_listing($user_encryptid) {
 
 
-
         $this->layout = 'default';
 
         $this->checklogin();
@@ -203,6 +202,18 @@ class ListingsController extends AppController {
             
             $awnidArr = explode(PHP_EOL, $awnidStr);
 
+            if(count($awnidArr) < 0)
+            {
+                $this->redirect(DEFAULT_URL.'listings/listing_requests/msg:There is no ASIN to list');
+                exit;    
+            }
+
+            if(count($awnidArr) > 10)
+            {
+                $this->redirect(DEFAULT_URL.'listings/listing_requests/msg:You can not list more than 10 ASIN or URLs');
+                exit;    
+            }
+
             $awnid = array();
 
             foreach($awnidArr as $singleawn)
@@ -213,10 +224,10 @@ class ListingsController extends AppController {
 
                 {
 
-                    $awnid[] = $this->get_asin($singleawn); // [[CUSTOM]] // to get correct ASIN number for amazon product
+                    $awnid[] = trim($this->get_asin($singleawn)); // [[CUSTOM]] // to get correct ASIN number for amazon product
 
                 } else {
-                    $awnid[] = $singleawn;
+                    $awnid[] = trim($singleawn);
                 }
             }
 
@@ -245,36 +256,47 @@ class ListingsController extends AppController {
 
 
             //check awnid
+            $awnidArr = explode(',', $awnid);
 
-            $check_product = $this->Product->find('all', array('conditions' => array('user_id'=>$userid,'source_id'=> $sourceid,'asin_no'=>$awnid)));
+            $check_product = $this->Product->find('all', array('conditions' => array('user_id'=>$userid,'source_id'=> $sourceid,'asin_no IN'=>$awnidArr)));
 
 
 
-//            $this->pre($check_product);
+            //$this->pre($check_product);
 
 //            $this->pre($this->data);
 
-//            exit;
+            //exit;
 
             $error_array = array();
 
             if(!empty($check_product))
 
             {
-
-                $error_array['dup_product'] = PRODUCT_EXISTS;
+                $already_exists_arr = array();
+                //$error_array['dup_product'] = PRODUCT_EXISTS;
+                foreach ($check_product as $check_product_num => $check_product_data)
+                {
+                    $already_exists_arr[] = $check_product_data['Product']['asin_no'];
+                }
+                //print_r($already_exists_arr);exit;
+                //$A = array_diff($A,$B); 
+                $awnid = implode(",", array_diff($awnidArr, $already_exists_arr));
+                $aeid = "&aeid=".implode(",", $already_exists_arr);
 
             }
 
             else
 
             {
-
-                $this->redirect(DEFAULT_URL .'get_product_detail.php?userid='.$userid.'&sourceid='.$sourceid.'&awnid='.$awnid.'&form_submit='.$form_submit );
-
-                exit;
+                $aeid = "";
 
             }
+
+            //echo DEFAULT_URL .'get_product_detail.php?userid='.$userid.'&sourceid='.$sourceid.'&awnid='.$awnid.$aeid.'&form_submit='.$form_submit;exit;
+            $this->redirect(DEFAULT_URL .'get_product_detail.php?userid='.$userid.'&sourceid='.$sourceid.'&awnid='.$awnid.$aeid.'&form_submit='.$form_submit );
+
+            exit;
 
             $this->set('error_array',$error_array);
 
@@ -301,6 +323,8 @@ class ListingsController extends AppController {
     function listing_requests() {
 
         //$user_encryptid
+
+        //print_r($_SESSION);
 
         $this->layout = 'default';
 

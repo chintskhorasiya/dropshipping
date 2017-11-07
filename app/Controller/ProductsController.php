@@ -509,7 +509,7 @@ class ProductsController extends AppController {
                 $lookup->setResponseGroup(array('Offers')); // More detailed information
                 $lookup->setItemId($uspd_slot);
                 $lookup->setCondition('All');
-                $lookup->setMerchantId('Amazon');
+                //$lookup->setMerchantId('Amazon');
                 $response = $apaiIo->runOperation($lookup);
                 $response = json_decode (json_encode (simplexml_load_string ($response)), true);
 
@@ -732,7 +732,7 @@ class ProductsController extends AppController {
                 $lookup->setResponseGroup(array('Offers')); // More detailed information
                 $lookup->setItemId($ukpd_slot);
                 $lookup->setCondition('All');
-                $lookup->setMerchantId('Amazon');
+                //$lookup->setMerchantId('Amazon');
                 $response = $apaiIo->runOperation($lookup);
                 $response = json_decode (json_encode (simplexml_load_string ($response)), true);
 

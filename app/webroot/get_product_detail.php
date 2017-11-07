@@ -61,7 +61,7 @@ $conf
 $apaiIo = new ApaiIO($conf);
 
 $awnid = $_GET['awnid'];
-pre($awnid);
+//pre($awnid);
 //pre($apaiIo);
 //exit;
 
@@ -76,7 +76,7 @@ pre($awnid);
 
 $lookup = new Lookup();
 //$lookup->setIdType('ASIN');
-$lookup->setResponseGroup(array('Large', 'OfferFull', 'VariationMatrix', 'VariationSummary'
+$lookup->setResponseGroup(array('Large', 'Offers', 'OfferFull', 'VariationMatrix', 'VariationSummary'
 , 'VariationOffers')); // More detailed information
 //$lookup->setItemId('B071FVJ9PJ');
 //$lookup->setItemId('B06VW5QNBF');
@@ -98,10 +98,18 @@ $response = json_decode (json_encode (simplexml_load_string ($response)), true);
 //var_dump($response);
 if(!empty($response))
 {
-    if(isset($response['Items']['Request']['Errors']['Error']['Message']))
+    if(isset($response['Items']['Request']['Errors']['Error']))
     {
-        $error = $response['Items']['Request']['Errors']['Error']['Message'];
-        $page_url = DEFAULT_URL.'listings/listing_requests/msg:'.$error;
+        if(isset($response['Items']['Request']['Errors']['Error'][0])){
+            $errors = '';
+            foreach ($response['Items']['Request']['Errors']['Error'] as $msgkey => $msgvalue) {
+                $errors .= $msgvalue['Message'].'<br>';
+            }
+            $page_url = DEFAULT_URL.'listings/listing_requests/msg:'.$errors;
+        } else {
+            $error = $response['Items']['Request']['Errors']['Error']['Message'];
+            $page_url = DEFAULT_URL.'listings/listing_requests/msg:'.$error;
+        }
         header('Location: '.$page_url);
         exit;
     }/*
@@ -122,14 +130,17 @@ if(!empty($response))
             $response['Items']['Item'][0] = $tempFirstItem;
         }
 
-        //pre($response['Items']['Item']);exit;
+        //pre($response['Items']['Item']);
 
         $add_product_array = array();
+        $succeed_product_array = array();
+        $failed_product_array = array();
 
         foreach ($response['Items']['Item'] as $responseNum => $responseItem)
         {
-            var_dump($responseNum);
+            //var_dump($responseNum);
             //pre($responseItem);
+            //exit;
 
             // categories
             $browseNodes = $responseItem['BrowseNodes']['BrowseNode'];
@@ -154,8 +165,8 @@ if(!empty($response))
 
             }
             // categories 
-
-            if($responseItem['Offers']['TotalOffers'] <= 0){
+            if((int)$responseItem['Offers']['TotalOffers'] == 0){
+                $failed_product_array[] = $responseItem['ASIN'];
                 continue;
             }
 
@@ -164,8 +175,23 @@ if(!empty($response))
             {
                 foreach ($responseItem['Offers']['Offer'] as $offerNum => $offerData)
                 {
+                    $itemavailable = false;
+                    $itemAvailability = $offerData['OfferListing']['Availability'];
+                    $itemAvailabilityAttributes = $offerData['OfferListing']['AvailabilityAttributes'];
+                    $itemAvailabilityMinHours = (int) $itemAvailabilityAttributes['MinimumHours'];
+                    //var_dump($itemAvailability);
+                    //var_dump(strpos($itemAvailability, 'Usually dispatched'));
+                    //var_dump(strpos($itemAvailability, 'Temporary out of stock'));
+                    /*if (strpos($itemAvailability, 'Usually dispatched') === FALSE && strpos($itemAvailability, 'Temporary out of stock') === FALSE) {
+                       $itemavailable = true;
+                    }*/
+                    if($itemAvailabilityMinHours < 96){
+                        $itemavailable = true;                        
+                    }
+                    //var_dump($itemavailable);
+                    //exit;
                     //pre($offerData);
-                    if($offerData['OfferListing']['IsEligibleForPrime'] == "1")
+                    if($offerData['OfferListing']['IsEligibleForPrime'] == "1" && $itemavailable)
                     {
                         $price = (isset($offerData['OfferListing']['Price']['Amount']))?$offerData['OfferListing']['Price']['Amount']:'';
                         //var_dump($price);
@@ -179,7 +205,23 @@ if(!empty($response))
             }
             else
             {
-                if($responseItem['Offers']['Offer']['OfferListing']['IsEligibleForPrime'] == "1")
+                $itemavailable = false;
+                $itemAvailability = $responseItem['Offers']['Offer']['OfferListing']['Availability'];
+                $itemAvailabilityAttributes = $responseItem['Offers']['Offer']['OfferListing']['AvailabilityAttributes'];
+                $itemAvailabilityMinHours = (int) $itemAvailabilityAttributes['MinimumHours'];
+                //var_dump($itemAvailability);
+                //var_dump(strpos($itemAvailability, 'Usually dispatched'));
+                //var_dump(strpos($itemAvailability, 'Temporary out of stock'));
+                /*if (strpos($itemAvailability, 'Usually dispatched') === FALSE && strpos($itemAvailability, 'Temporary out of stock') === FALSE) {
+                   $itemavailable = true;
+                }*/
+                if($itemAvailabilityMinHours < 96){
+                    $itemavailable = true;
+                }
+                //var_dump($itemavailable);
+                //exit;
+
+                if($responseItem['Offers']['Offer']['OfferListing']['IsEligibleForPrime'] == "1" && $itemavailable)
                 {
                     $price = (isset($responseItem['Offers']['Offer']['OfferListing']['Price']['Amount']))?$responseItem['Offers']['Offer']['OfferListing']['Price']['Amount']:'';
                     //var_dump($price);
@@ -190,9 +232,15 @@ if(!empty($response))
                 }
             }
 
+            //var_dump($gotOffer);exit;
+
             if(!$gotOffer){
+                $failed_product_array[] = $responseItem['ASIN'];
+                //echo "not get offer for ".$responseItem['ASIN']."<br>";
                 continue;
             }
+
+            //exit;
 
             $get_product_attribute = $responseItem['ItemAttributes'];
             $offer_summary = $responseItem['OfferSummary'];
@@ -558,14 +606,20 @@ if(!empty($response))
             //exit;
             // [[CUSTOM]]
             //import_categories($awsCategories, $_GET['sourceid']);
-            $sql_insert_product = insert_data('products', $add_product_array[$responseNum]);   
+            $sql_insert_product = insert_data('products', $add_product_array[$responseNum]);
+            if($sql_insert_product!=''){
+                $succeed_product_array[] = $responseItem['ASIN'];
+            }
         }
 
-        pre($add_product_array);exit;
+        //pre($add_product_array);
+        //pre($succeed_product_array);
+        //pre($failed_product_array);
+        //exit;
 
         //$sql_insert_product = insert_data('products', $add_product_array);exit;
 
-        if($sql_insert_product!='')
+        /*if($sql_insert_product!='')
         {
             $page_url = DEFAULT_URL.'listings/listing_requests/';
         }
@@ -574,6 +628,82 @@ if(!empty($response))
             $error = "Some problem when upload product";
             $page_url = DEFAULT_URL.'listings/listing_requests/msg:'.$error;
         }
+        header('Location: '.$page_url);
+        exit;*/
+
+        if(count($failed_product_array) > 0)
+        {
+          $failed_products = implode(',', $failed_product_array);
+          //$failed_param = "failed_products:".$failed_products;
+          if(count($failed_product_array) > 1)
+          {
+            $failed_products_msg = "These ".count($failed_product_array)." products are not available for listing : ".$failed_products;
+          }
+          else
+          {
+            $failed_products_msg = "This product is not available for listing : ".$failed_products;
+          }
+          $_SESSION['error_msg'] = $failed_products_msg;
+          $failed_products_msg_encoded = base64_encode($failed_products_msg);
+          $failed_param = "/failed:".$failed_products_msg_encoded;
+        }
+        else
+        {
+          $failed_param = "";
+        }
+
+        if(count($succeed_product_array) > 0)
+        {
+          $succeed_products = implode(',', $succeed_product_array);
+          //$succeed_param = "succeed_products:".$succeed_products;
+          if(count($succeed_product_array) > 1)
+          {
+            $succeed_products_msg = "These ".count($succeed_product_array)." products are successfully listed : ".$succeed_products;
+          }
+          else
+          {
+            $succeed_products_msg = "This product is successfully listed : ".$succeed_products;
+          }
+          $_SESSION['success_msg'] = $succeed_products_msg;
+          $succeed_products_msg_encoded = base64_encode($succeed_products_msg);
+          $succeed_param = "/succeed:".$succeed_products_msg_encoded;
+        }
+        else
+        {
+          $succeed_param = "";
+        }
+
+        if(isset($_GET['aeid']))
+        {
+            $existed_product_array = explode(',', $_GET['aeid']);
+            if(count($existed_product_array) > 0)
+            {
+              $existed_products = implode(',', $existed_product_array);
+              //$succeed_param = "succeed_products:".$succeed_products;
+              if(count($existed_product_array) > 1)
+              {
+                $existed_products_msg = "These ".count($existed_product_array)." products are already existed : ".$existed_products;
+              }
+              else
+              {
+                $existed_products_msg = "This product is already existed : ".$existed_products;
+              }
+              $_SESSION['error_msg'] = $existed_products_msg;
+              $existed_products_msg_encoded = base64_encode($existed_products_msg);
+              $existed_param = "/existed:".$existed_products_msg_encoded;
+            }
+            else
+            {
+              $existed_param = "";
+            }
+        }
+
+        //print_r($_SESSION);
+        //exit;
+
+
+        $page_url = DEFAULT_URL.'listings/listing_requests'.$succeed_param.$failed_param.$existed_param;
+        //$page_url = DEFAULT_URL.'listings/listing_requests';
         header('Location: '.$page_url);
         exit;
     }
