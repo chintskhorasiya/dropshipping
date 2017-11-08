@@ -189,7 +189,7 @@
                                     <div class="form-group col-md-12 padding-left-o">
                                         <label>Description</label>
                                         <div class="input-group">
-                                            <textarea name="itemDescription" id="itemDescription" class="form-control"><?php echo stripslashes($product_data['Product']['description']); ?></textarea>
+                                            <textarea name="itemDescription" id="itemDescription" class="form-control"><?php if(!empty($product_data['Product']['description'])) { echo stripslashes($product_data['Product']['description']); } else { echo stripslashes($product_data['Product']['title']); } ?></textarea>
                                         </div>
                                     </div>
                                     <div class="clear"></div>

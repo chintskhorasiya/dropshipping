@@ -24,6 +24,7 @@
                                             <li>Paste in the product IDs / urls of what you want to list.</li>
                                             <li>We'll show you products we found in green. Then, click list.</li>
                                             <li>View your <a href="<?php echo DEFAULT_URL.'listings/listing_requests';?>">Listings Requests</a> to monitor progress.</li>
+                                            <li>The format of listing multiple items (You can add ASIN/URL seperated by newline(using enter key)) And Maximum 10 ASIN/URL (s) you can add at once</li>
                                         </ol>
                                     </h4>
                                     <form action="<?php //echo DEFAULT_URL.'get_product_detail.php'?>" method="post">

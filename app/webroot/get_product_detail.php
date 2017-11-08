@@ -171,6 +171,24 @@ if(!empty($response))
             }
 
             $gotOffer = false;
+
+            /*$MoreOffersUrl = $responseItem['Offers']['MoreOffersUrl'];
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_URL,$MoreOffersUrl);
+            $result=curl_exec($ch);
+            //echo $result;exit;
+            curl_close($ch);
+            $doc = new DomDocument;
+            $doc->validateOnParse = true;
+            $doc->loadHTML($result);
+            $doc->saveHTML();
+            //var_dump($doc);exit;
+            var_dump($doc->getElementById('olpOfferList')->childNodes->item(2));exit;
+            var_dump(explode("Add to Basket", trim(strip_tags($doc->getElementById('olpOfferList')->nodeValue." Add to Basket"))));
+            echo "The element whose id is 'olpOfferList' is: " . $doc->getElementById('olpOfferList')->tagName . "\n";exit;*/
+
             if(isset($responseItem['Offers']['Offer']) && isset($responseItem['Offers']['Offer'][0]))
             {
                 foreach ($responseItem['Offers']['Offer'] as $offerNum => $offerData)
@@ -462,7 +480,7 @@ if(!empty($response))
                     $ProductVariations = "";
                 }
             }
-            else
+            elseif(!empty($responseItem['ParentASIN']))
             {
                 $ParentASIN = $responseItem['ParentASIN'];
                 $lookup = new Lookup();
@@ -474,7 +492,7 @@ if(!empty($response))
                 $lookup->setCondition('All');
                 $var_response = $apaiIo->runOperation($lookup);
                 $var_response = json_decode (json_encode (simplexml_load_string ($var_response)), true);
-
+                //pre($var_response);exit;
                 $TotalVariations = (int)$var_response['Items']['Item']['Variations']['TotalVariations'];
 
                 if(isset($var_response['Items']['Item']['Variations']) && $TotalVariations > 0)
@@ -485,8 +503,10 @@ if(!empty($response))
                 {
                     $ProductVariations = "";
                 }
+            } else {
+                $ProductVariations = "";
             }
-            //pre($ProductVariations);
+            //pre($ProductVariations);exit;
             if(!empty($ProductVariations))
             {
                // for product variations_dimensions
@@ -591,14 +611,14 @@ if(!empty($response))
                 $add_product_array[$responseNum]['variations_images'] = json_encode($add_product_array[$responseNum]['variations_images']);
                }
 
-               $add_product_array[$responseNum]['created_date'] = date('Y-m-d H:i:s');
-               $add_product_array[$responseNum]['modified_date'] = date('Y-m-d H:i:s');
-
                //echo json_encode($add_product_array['variations_dimentions']);
                //echo '<br>';
                //echo json_encode($add_product_array['variations_items']);
                //exit;
             }
+
+            $add_product_array[$responseNum]['created_date'] = date('Y-m-d H:i:s');
+            $add_product_array[$responseNum]['modified_date'] = date('Y-m-d H:i:s');
 
             //pre($response);
             //pre($ProductVariations);
@@ -607,6 +627,7 @@ if(!empty($response))
             // [[CUSTOM]]
             //import_categories($awsCategories, $_GET['sourceid']);
             $sql_insert_product = insert_data('products', $add_product_array[$responseNum]);
+            //var_dump($sql_insert_product);exit;
             if($sql_insert_product!=''){
                 $succeed_product_array[] = $responseItem['ASIN'];
             }
