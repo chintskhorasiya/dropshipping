@@ -293,8 +293,37 @@ class ListingsController extends AppController {
 
             }
 
-            //echo DEFAULT_URL .'get_product_detail.php?userid='.$userid.'&sourceid='.$sourceid.'&awnid='.$awnid.$aeid.'&form_submit='.$form_submit;exit;
-            $this->redirect(DEFAULT_URL .'get_product_detail.php?userid='.$userid.'&sourceid='.$sourceid.'&awnid='.$awnid.$aeid.'&form_submit='.$form_submit );
+            if(empty($awnid))
+            {
+                if(count($already_exists_arr) > 0)
+                {
+                  $existed_products = implode(',', $already_exists_arr);
+                  if(count($already_exists_arr) > 1)
+                  {
+                    $existed_products_msg = "These ".count($already_exists_arr)." products are already existed : ".$existed_products;
+                  }
+                  else
+                  {
+                    $existed_products_msg = "This product is already existed : ".$existed_products;
+                  }
+                  //$_SESSION['error_msg'] = $existed_products_msg;
+                  $existed_products_msg_encoded = base64_encode($existed_products_msg);
+                  $existed_param = "/existed:".$existed_products_msg_encoded;
+                }
+                else
+                {
+                  $existed_param = "";
+                }
+
+                $page_url = DEFAULT_URL.'listings/listing_requests'.$existed_param;
+
+                $this->redirect($page_url);
+            }
+            else
+            {
+                //echo DEFAULT_URL .'get_product_detail.php?userid='.$userid.'&sourceid='.$sourceid.'&awnid='.$awnid.$aeid.'&form_submit='.$form_submit;exit;
+                $this->redirect(DEFAULT_URL .'get_product_detail.php?userid='.$userid.'&sourceid='.$sourceid.'&awnid='.$awnid.$aeid.'&form_submit='.$form_submit );
+            }
 
             exit;
 
@@ -874,11 +903,11 @@ class ListingsController extends AppController {
 
             //var_dump($primaryCategory);exit;
 
-            $size_mens_categories = array('11483','15687', '11484', '57990');
+            $size_mens_categories = array('11483','15687','11484','57990');
             $mens_bottom_size_categories = array('57989');
             $womens_bottom_size_categories = array('11554');
             $mens_us_shoe_size_categories = array('24087');
-            $variation_type_categories = array('20696');
+            $variation_type_categories = array('20696','45002','61312');
 
             //Item Variations (if available)
             if(!empty($variations_dimentions) && $withVariations)
@@ -981,9 +1010,10 @@ class ListingsController extends AppController {
                 if(!empty($variations_images))
                 {
                     $pictures = new Types\PicturesType();
+                    //$this->pre($variations_images);
                     foreach ($variations_images as $variations_images_key => $variations_images_value)
                     {
-                        if($variations_images_key == "Size"){
+                        if($variations_images_key == "Size" && (in_array($primaryCategory, $size_mens_categories) || in_array($primaryCategory, $mens_bottom_size_categories) || in_array($primaryCategory, $womens_bottom_size_categories) || in_array($primaryCategory, $mens_us_shoe_size_categories)) ){
                             continue;
                         }
 
@@ -1511,7 +1541,7 @@ class ListingsController extends AppController {
         $lookup->setResponseGroup(array('Offers')); // More detailed information
         $lookup->setItemId($awnid);
         //$lookup->setItemId('B00UG7WDQ6');
-        $lookup->setCondition('All');
+        $lookup->setCondition('New');
         $response = $apaiIo->runOperation($lookup);
         $response = json_decode (json_encode (simplexml_load_string ($response)), true);
 
@@ -1581,7 +1611,7 @@ class ListingsController extends AppController {
                 $lookup->setIdType('ASIN');
                 $lookup->setResponseGroup(array('Variations', 'VariationOffers', 'VariationMatrix')); // More detailed information
                 $lookup->setItemId($ParentASIN);
-                $lookup->setCondition('All');
+                $lookup->setCondition('New');
                 $var_response = $apaiIo->runOperation($lookup);
                 $var_response = json_decode (json_encode (simplexml_load_string ($var_response)), true);
 

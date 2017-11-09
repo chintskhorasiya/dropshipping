@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-session_start();
+//session_start();
 include('function.php');
 include('constant.php');
 //require_once ("config.php");
@@ -61,7 +61,7 @@ $conf
 $apaiIo = new ApaiIO($conf);
 
 $awnid = $_GET['awnid'];
-//pre($awnid);
+//var_dump($awnid);
 //pre($apaiIo);
 //exit;
 
@@ -81,7 +81,7 @@ $lookup->setResponseGroup(array('Large', 'Offers', 'OfferFull', 'VariationMatrix
 //$lookup->setItemId('B071FVJ9PJ');
 //$lookup->setItemId('B06VW5QNBF');
 $lookup->setItemId($awnid);
-$lookup->setCondition('All');
+$lookup->setCondition('New');
 //$lookup->setMerchantId('Amazon');
 $response = $apaiIo->runOperation($lookup);
 
@@ -179,12 +179,46 @@ if(!empty($response))
             curl_setopt($ch, CURLOPT_URL,$MoreOffersUrl);
             $result=curl_exec($ch);
             //echo $result;exit;
+            $result = '
+            <html>
+                <head>
+                    <title>Result</title>
+                </head>
+                <body>
+                    <h1>test h1</h1>
+                    <div class"test">hahahahaha</div>
+                    <div id="olpOfferList">
+                        <div class"olpOffer">
+                            <span>45$</span>
+                        </div>
+                    </div>
+                    <div class"test">hahahahaha</div>
+                </body>
+            </html>';
             curl_close($ch);
             $doc = new DomDocument;
             $doc->validateOnParse = true;
             $doc->loadHTML($result);
-            $doc->saveHTML();
-            //var_dump($doc);exit;
+            //$doc->saveHTML();
+
+            $xpath = new DOMXPath($doc);
+            //$row = $xpath->query('*'); ////*[starts-with(@class,"olpOffer")]/div/span/text()
+            // example 3: same as above with wildcard
+            //$elements = $xpath->query('*');
+            $elements = $doc->getElementById('olpOfferList')->nodeValue->item(0);
+            pre($elements);exit;
+            if (!is_null($elements)) {
+              foreach ($elements as $element) {
+                echo "<br/>[". $element->nodeName. "]";
+
+                $nodes = $element->childNodes;
+                foreach ($nodes as $node) {
+                  echo $node->nodeValue. "\n";
+                }
+              }
+            }
+            exit;
+            var_dump($doc->getElementById('olpOfferList')->nodeValue);exit;
             var_dump($doc->getElementById('olpOfferList')->childNodes->item(2));exit;
             var_dump(explode("Add to Basket", trim(strip_tags($doc->getElementById('olpOfferList')->nodeValue." Add to Basket"))));
             echo "The element whose id is 'olpOfferList' is: " . $doc->getElementById('olpOfferList')->tagName . "\n";exit;*/
@@ -489,10 +523,11 @@ if(!empty($response))
     'VariationOffers')); // More detailed information
                 $lookup->setItemId($ParentASIN);
                 //$lookup->setMerchantId('Amazon');
-                $lookup->setCondition('All');
+                $lookup->setCondition('New');
                 $var_response = $apaiIo->runOperation($lookup);
                 $var_response = json_decode (json_encode (simplexml_load_string ($var_response)), true);
-                //pre($var_response);exit;
+                //pre($var_response);
+                //exit;
                 $TotalVariations = (int)$var_response['Items']['Item']['Variations']['TotalVariations'];
 
                 if(isset($var_response['Items']['Item']['Variations']) && $TotalVariations > 0)
@@ -528,6 +563,59 @@ if(!empty($response))
                {
                     //pre($pvItemValue);
                     //var_dump($pvItemValue['VariationAttributes']['VariationAttribute']);exit;
+
+                    // [[CUSTOM]] FOR CHECKING VARIATION OFFERS
+
+                    $vgotOffer = false;
+
+                    if(!isset($pvItemValue['Offers']['Offer']) || empty($pvItemValue['Offers']['Offer'])){
+                        continue;
+                    }
+
+                    if(!isset($pvItemValue['Offers']['Offer'][0])){
+                        $tempVarOfferData = $pvItemValue['Offers']['Offer'];
+                        unset($pvItemValue['Offers']['Offer']);
+                        $pvItemValue['Offers']['Offer'][0] = $tempVarOfferData;
+                    }
+
+                    foreach ($pvItemValue['Offers']['Offer'] as $vofferNum => $vofferData)
+                    {
+                        $vitemavailable = false;
+                        $vitemAvailability = $vofferData['OfferListing']['Availability'];
+                        $vitemAvailabilityAttributes = $vofferData['OfferListing']['AvailabilityAttributes'];
+                        $vitemAvailabilityMinHours = (int) $vitemAvailabilityAttributes['MinimumHours'];
+                        if($vitemAvailabilityMinHours < 96){
+                            $vitemavailable = true;                        
+                        }
+                        //var_dump($vitemavailable);
+                        //exit;
+                        //pre($vofferData);
+                        if($vofferData['OfferListing']['IsEligibleForPrime'] == "1" && $vitemavailable)
+                        {
+                            $pvItemValue['vprice'] = (isset($vofferData['OfferListing']['Price']['Amount']))?$vofferData['OfferListing']['Price']['Amount']:'';
+                            //var_dump($price);
+                            $pvItemValue['vamount_save'] = (isset($vofferData['OfferListing']['AmountSaved']['Amount']))?$vofferData['OfferListing']['AmountSaved']['Amount']:'';
+                            $pvItemValue['vsale_price'] = (isset($vofferData['OfferListing']['SalePrice']['Amount']))?$vofferData['OfferListing']['SalePrice']['Amount']:'';
+                            $pvItemValue['vpercentage_save'] = (isset($vofferData['OfferListing']['PercentageSaved']))?$vofferData['OfferListing']['PercentageSaved']:'';
+                            $vgotOffer = true;
+                            break;
+                        }  
+                    }
+
+                    if(!$vgotOffer){
+                        continue;
+                    } else {
+                        //var_dump($pvItemValue['vprice']);
+                        //var_dump($pvItemValue['vsale_price']);
+                        if(!empty($pvItemValue['vsale_price'])){
+                            $variation_amount = $pvItemValue['vsale_price'];
+                        } else {
+                            $variation_amount = $pvItemValue['vprice'];
+                        }
+                    }
+
+                    // VARIATIONS OFFERS END
+
                     if(isset($pvItemValue['VariationAttributes']['VariationAttribute'][0]) && is_array($pvItemValue['VariationAttributes']['VariationAttribute'][0]))
                     {
 
@@ -556,8 +644,39 @@ if(!empty($response))
                         }
                        }
 
+                       // [[VARIATIONS IMAGES]]
 
-                       if(is_array($add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']]))
+                       //pre($pvItemValue['ImageSets']['ImageSet']);
+                       if(!isset($pvItemValue['ImageSets']['ImageSet'][0]))
+                       {
+                            $tempVarImagesetData = $pvItemValue['ImageSets']['ImageSet'];
+                            unset($pvItemValue['ImageSets']['ImageSet']);
+                            $pvItemValue['ImageSets']['ImageSet'][0] = $tempVarImagesetData;
+                       }
+
+                       foreach ($pvItemValue['ImageSets']['ImageSet'] as $img_set_key => $img_set_val) {
+                           
+                           if(is_array($add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']]))
+                           {
+                               if(!in_array($img_set_val['LargeImage']['URL'], $add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']])){
+                                    array_push($add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']], $img_set_val['LargeImage']['URL']);
+                               }
+                           }
+                           else
+                           {
+                               $add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']] = array();
+                               if(!in_array($img_set_val['LargeImage']['URL'], $add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']])){
+                                    array_push($add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']], $img_set_val['LargeImage']['URL']);
+                               }
+                           }
+                       }
+
+                       // [[VARIATIONS IMAGES]]
+
+
+                       // [[OLD VARIATIONS IMAGES CODE]]
+
+                       /*if(is_array($add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']]))
                        {
                            if(!in_array($pvItemValue['LargeImage']['URL'], $add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']])){
                                 array_push($add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']], $pvItemValue['LargeImage']['URL']);
@@ -569,7 +688,9 @@ if(!empty($response))
                            if(!in_array($pvItemValue['LargeImage']['URL'], $add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']])){
                                 array_push($add_product_array[$responseNum]['variations_images'][$pvItemVAValue['Name']][$pvItemVAValue['Value']], $pvItemValue['LargeImage']['URL']);
                            }
-                       }
+                       }*/
+
+                       // [[OLD VARIATIONS IMAGES CODE]]
                    }
 
                    $add_product_array[$responseNum]['variations_items'][$pvItemKey]['sku'] = $def_sku_prefix.$pvItemValue['ASIN'];
@@ -578,11 +699,11 @@ if(!empty($response))
                    $variation_list_amount = $pvItemValue['ItemAttributes']['ListPrice']['Amount'];
                    $variation_offer_amount = $pvItemValue['Offers']['Offer']['OfferListing']['Price']['Amount'];
 
-                   if(empty($variation_offer_amount)){
+                   /*if(empty($variation_offer_amount)){
                         $variation_amount = $variation_list_amount;
                    } else {
                         $variation_amount = $variation_offer_amount;                
-                   }
+                   }*/
 
                    //var_dump($pvItemKey);
                    //var_dump($add_product_array['list_amount']);
@@ -597,17 +718,17 @@ if(!empty($response))
                }
 
                if(!empty($add_product_array[$responseNum]['variations_dimentions'])){
-                //pre($add_product_array['variations_dimentions']);
+                //pre($add_product_array[$responseNum]['variations_dimentions']);
                 $add_product_array[$responseNum]['variations_dimentions'] = json_encode($add_product_array[$responseNum]['variations_dimentions']);
                }
 
                if(!empty($add_product_array[$responseNum]['variations_items'])){
-                //pre($add_product_array['variations_items']);
+                //pre($add_product_array[$responseNum]['variations_items']);
                 $add_product_array[$responseNum]['variations_items'] = json_encode($add_product_array[$responseNum]['variations_items']);
                }
 
                if(!empty($add_product_array[$responseNum]['variations_images'])){
-                //pre($add_product_array['variations_images']);exit;
+                //pre($add_product_array[$responseNum]['variations_images']);exit;
                 $add_product_array[$responseNum]['variations_images'] = json_encode($add_product_array[$responseNum]['variations_images']);
                }
 
@@ -664,7 +785,7 @@ if(!empty($response))
           {
             $failed_products_msg = "This product is not available for listing : ".$failed_products;
           }
-          $_SESSION['error_msg'] = $failed_products_msg;
+          //$_SESSION['error_msg'] = $failed_products_msg;
           $failed_products_msg_encoded = base64_encode($failed_products_msg);
           $failed_param = "/failed:".$failed_products_msg_encoded;
         }
@@ -685,7 +806,7 @@ if(!empty($response))
           {
             $succeed_products_msg = "This product is successfully listed : ".$succeed_products;
           }
-          $_SESSION['success_msg'] = $succeed_products_msg;
+          //$_SESSION['success_msg'] = $succeed_products_msg;
           $succeed_products_msg_encoded = base64_encode($succeed_products_msg);
           $succeed_param = "/succeed:".$succeed_products_msg_encoded;
         }
@@ -709,7 +830,7 @@ if(!empty($response))
               {
                 $existed_products_msg = "This product is already existed : ".$existed_products;
               }
-              $_SESSION['error_msg'] = $existed_products_msg;
+              //$_SESSION['error_msg'] = $existed_products_msg;
               $existed_products_msg_encoded = base64_encode($existed_products_msg);
               $existed_param = "/existed:".$existed_products_msg_encoded;
             }

@@ -131,7 +131,7 @@ class ProductsController extends AppController {
                     $lookup = new Lookup();
                     $lookup->setResponseGroup(array('Offers')); // More detailed information
                     $lookup->setItemId($uspd_slot);
-                    $lookup->setCondition('All');
+                    $lookup->setCondition('New');
                     $lookup->setMerchantId('All');
                     $response = $apaiIo->runOperation($lookup);
                     $response = json_decode (json_encode (simplexml_load_string ($response)), true);
@@ -215,7 +215,7 @@ class ProductsController extends AppController {
                     $lookup = new Lookup();
                     $lookup->setResponseGroup(array('Offers')); // More detailed information
                     $lookup->setItemId($ukpd_slot);
-                    $lookup->setCondition('All');
+                    $lookup->setCondition('New');
                     $response = $apaiIo->runOperation($lookup);
                     $response = json_decode (json_encode (simplexml_load_string ($response)), true);
 
@@ -309,7 +309,7 @@ class ProductsController extends AppController {
                 $lookup = new Lookup();
                 $lookup->setResponseGroup(array('Offers')); // More detailed information
                 $lookup->setItemId($awnid);
-                $lookup->setCondition('All');
+                $lookup->setCondition('New');
                 $response = $apaiIo->runOperation($lookup);
                 $response = json_decode (json_encode (simplexml_load_string ($response)), true);
 
@@ -508,7 +508,7 @@ class ProductsController extends AppController {
                 $lookup = new Lookup();
                 $lookup->setResponseGroup(array('Offers')); // More detailed information
                 $lookup->setItemId($uspd_slot);
-                $lookup->setCondition('All');
+                $lookup->setCondition('New');
                 //$lookup->setMerchantId('Amazon');
                 $response = $apaiIo->runOperation($lookup);
                 $response = json_decode (json_encode (simplexml_load_string ($response)), true);
@@ -731,7 +731,7 @@ class ProductsController extends AppController {
                 $lookup = new Lookup();
                 $lookup->setResponseGroup(array('Offers')); // More detailed information
                 $lookup->setItemId($ukpd_slot);
-                $lookup->setCondition('All');
+                $lookup->setCondition('New');
                 //$lookup->setMerchantId('Amazon');
                 $response = $apaiIo->runOperation($lookup);
                 $response = json_decode (json_encode (simplexml_load_string ($response)), true);
