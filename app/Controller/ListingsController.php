@@ -1017,6 +1017,10 @@ class ListingsController extends AppController {
                             continue;
                         }
 
+                        if($variations_images_key == "Number of Lights"){
+                            continue;
+                        }
+
                         if($variations_images_key == "Style" && in_array($primaryCategory, $variation_type_categories)){
                             $variations_images_key = "Type";
                         }

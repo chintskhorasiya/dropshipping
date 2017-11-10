@@ -1,4 +1,23 @@
 <?php
+function pre($data)
+{
+    echo "<pre>";
+    print_r($data);
+    echo "</pre>";
+}
+
+function getAncestors($nodeId , $nodeJsonString){
+    //var_dump($nodeJsonString);
+    //echo "<br>";
+    $nodeJsonString .= ',"parent":'.$nodeId['BrowseNode']['BrowseNodeId'].'},';
+    $nodeJsonString .= '{"id":'.$nodeId['BrowseNode']['BrowseNodeId'].',"name":"'.$nodeId['BrowseNode']['Name'].'"';
+    if(!empty($nodeId['BrowseNode']['Ancestors']) && is_array($nodeId['BrowseNode']['Ancestors']) && count($nodeId['BrowseNode']['Ancestors']) > 0){
+        return getAncestors($nodeId['BrowseNode']['Ancestors'], $nodeJsonString);
+    } else {
+        $nodeJsonString .= ',"parent":0}]';
+        return $nodeJsonString;
+    }     
+}
 /*
  * Copyright 2016 Jan Eichhorn <exeu65@googlemail.com>
  *
@@ -30,11 +49,12 @@ define('AWS_ANOTHER_ASSOCIATE_TAG', '');
 
 // [[CUSTOM]] FOR EBAY
 require_once __DIR__.'/../../vendor/autoload.php';
+use \DTS\eBaySDK\Sdk;
 use \DTS\eBaySDK\Constants;
+use \DTS\eBaySDK\Trading;
 use \DTS\eBaySDK\Trading\Services;
 use \DTS\eBaySDK\Trading\Types;
 use \DTS\eBaySDK\Trading\Enums;
-
 $country_cod = 'com';
 if(isset($_REQUEST['sourceid']) && $_REQUEST['sourceid']==2)
 {
@@ -60,6 +80,7 @@ $conf
 
 $apaiIo = new ApaiIO($conf);
 
+//$awnid = explode(",", $_GET['awnid']);
 $awnid = $_GET['awnid'];
 //var_dump($awnid);
 //pre($apaiIo);
@@ -84,8 +105,7 @@ $lookup->setItemId($awnid);
 $lookup->setCondition('New');
 //$lookup->setMerchantId('Amazon');
 $response = $apaiIo->runOperation($lookup);
-
-$response = json_decode (json_encode (simplexml_load_string ($response)), true);
+$response = json_decode(json_encode(simplexml_load_string($response)), true);
 
 //pre($_GET);
 //pre($_POST);
@@ -437,7 +457,7 @@ if(!empty($response))
                 $add_product_array[$responseNum]['a_cat_id'] = $awsCategories[0]->id;
             }
 
-            //pre($add_product_array);
+            //pre($add_product_array);exit;
 
             // [[CUSTOM]] // for ebay Suggested Category Id
             if(isset($_REQUEST['sourceid']) && $_REQUEST['sourceid']==2)
@@ -544,6 +564,59 @@ if(!empty($response))
             //pre($ProductVariations);exit;
             if(!empty($ProductVariations))
             {
+                // [[CUSTOM]] FOR CHECKING VARIATION ENABLED IN EBAY
+
+                $sdkVarEnabled = new Sdk([
+                    'credentials' => [
+                                'devId' => EBAY_LIVE_DEVID,
+                                'appId' => EBAY_LIVE_APPID,
+                                'certId' => EBAY_LIVE_CERTID,
+                            ],
+                    'authToken'   => EBAY_LIVE_AUTHTOKEN,
+                    'siteId'      => $conSiteId
+                ]);
+
+                //var_dump($add_product_array[$responseNum]['ebay_cat_id']);
+                $gotEbayCategory = (string) $add_product_array[$responseNum]['ebay_cat_id'];
+                $serviceVarEnabled = $sdkVarEnabled->createTrading();
+                /*$requestVarEnabled = new Trading\Types\GetCategoryFeaturesRequestType();
+                $requestVarEnabled->CategoryID = (string) $add_product_array[$responseNum]['ebay_cat_id'];
+                $requestVarEnabled->DetailLevel = array('ReturnAll');
+                $requestVarEnabled->ViewAllNodes = true;
+                $responseVarEnabled = $serviceVarEnabled->getCategoryFeatures($requestVarEnabled);
+                //pre($responseVarEnabled);*/
+
+                $requestCatSpecis = new Trading\Types\GetCategorySpecificsRequestType();
+                $requestCatSpecis->CategoryID = array($gotEbayCategory); // "53159" //"20668"; 
+                //"170092";
+                //var_dump($requestCatSpecis);
+                $requestCatSpecis->CategorySpecific->CategoryID = $gotEbayCategory;
+                $responseCatSpecis = $serviceVarEnabled->getCategorySpecifics($requestCatSpecis);
+
+                $catHaveSpecifics = $responseCatSpecis->Recommendations[0]->NameRecommendation;
+                //echo count($response->Recommendations[0]->NameRecommendation);
+                $varEnaSpecifics = array();
+                foreach ($catHaveSpecifics as $chs_key => $chs_data) {
+                    if($chs_data->ValidationRules->VariationSpecifics == "Disabled"){
+
+                    } else {
+                        //echo '<pre>';print_r($chs_data->Name);echo '</pre>';
+                        //echo '<pre>';print_r($chs_data->ValueRecommendation);echo '</pre>';
+                        $variationValues = array();
+                        foreach ($chs_data->ValueRecommendation as $vvkey => $vvvalue) {
+                            //echo '<pre>';print_r($vvvalue->Value);echo '</pre>';
+                            $variationValues[] = $vvvalue->Value;
+                        }
+                        //$fullvariation = $chs_data->Name;
+                        $varEnaSpecifics[$chs_data->Name] = $variationValues;
+                    }
+                }
+
+                //pre($varEnaSpecifics);
+
+               // [[CUSTOM]] FOR CHECKING VARIATION ENABLED IN EBAY
+
+
                // for product variations_dimensions
                $add_product_array[$responseNum]['variations_dimentions'] = array();
                $add_product_array[$responseNum]['variations_items'] = array();
@@ -627,8 +700,21 @@ if(!empty($response))
 
                     //var_dump($pvItemValue['VariationAttributes']['VariationAttribute']);exit;
 
+                    $modiVariationAttributes = array();
+
                     foreach ($pvItemValue['VariationAttributes']['VariationAttribute'] as $pvItemVAKey => $pvItemVAValue)
                     {
+
+                       if($add_product_array[$responseNum]['ebay_cat_id'] == "38229")
+                       {
+                           if($pvItemVAValue['Name'] == "Size") $pvItemVAValue['Name'] = "Number of Lights";
+                           if($pvItemVAValue['Name'] == "Color") $pvItemVAValue['Name'] = "Main Colour";
+                           if($pvItemVAValue['Value'] == "180 LED") $pvItemVAValue['Value'] = "151-200";
+                           if($pvItemVAValue['Value'] == "300 LED") $pvItemVAValue['Value'] = "250-300";
+                           if($pvItemVAValue['Value'] == "400 LED") $pvItemVAValue['Value'] = "301-400";
+                       }
+
+                       $modiVariationAttributes[] = array('Name' => $pvItemVAValue['Name'], 'Value' => $pvItemVAValue['Value']);
 
                        if(is_array($add_product_array[$responseNum]['variations_dimentions'][$pvItemVAValue['Name']]))
                        {
@@ -713,7 +799,9 @@ if(!empty($response))
                    }
 
                    $add_product_array[$responseNum]['variations_items'][$pvItemKey]['price'] = $variation_amount;
-                   $add_product_array[$responseNum]['variations_items'][$pvItemKey]['attrs'] = $pvItemValue['VariationAttributes']['VariationAttribute'];
+                   //$add_product_array[$responseNum]['variations_items'][$pvItemKey]['attrs'] = $pvItemValue['VariationAttributes']['VariationAttribute'];
+
+                   $add_product_array[$responseNum]['variations_items'][$pvItemKey]['attrs'] = $modiVariationAttributes;
                    //$add_product_array[$responseNum]['variations_items'][$pvItemKey]['price'] = 
                }
 
@@ -731,6 +819,7 @@ if(!empty($response))
                 //pre($add_product_array[$responseNum]['variations_images']);exit;
                 $add_product_array[$responseNum]['variations_images'] = json_encode($add_product_array[$responseNum]['variations_images']);
                }
+
 
                //echo json_encode($add_product_array['variations_dimentions']);
                //echo '<br>';
@@ -849,25 +938,5 @@ if(!empty($response))
         header('Location: '.$page_url);
         exit;
     }
-}
-
-function pre($data)
-{
-    echo "<pre>";
-    print_r($data);
-    echo "</pre>";
-}
-
-function getAncestors($nodeId , $nodeJsonString){
-    //var_dump($nodeJsonString);
-    //echo "<br>";
-    $nodeJsonString .= ',"parent":'.$nodeId['BrowseNode']['BrowseNodeId'].'},';
-    $nodeJsonString .= '{"id":'.$nodeId['BrowseNode']['BrowseNodeId'].',"name":"'.$nodeId['BrowseNode']['Name'].'"';
-    if(!empty($nodeId['BrowseNode']['Ancestors']) && is_array($nodeId['BrowseNode']['Ancestors']) && count($nodeId['BrowseNode']['Ancestors']) > 0){
-        return getAncestors($nodeId['BrowseNode']['Ancestors'], $nodeJsonString);
-    } else {
-        $nodeJsonString .= ',"parent":0}]';
-        return $nodeJsonString;
-    }     
 }
 ?>
