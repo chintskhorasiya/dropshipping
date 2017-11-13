@@ -103,7 +103,7 @@ $lookup->setResponseGroup(array('Large', 'Offers', 'OfferFull', 'VariationMatrix
 //$lookup->setItemId('B06VW5QNBF');
 $lookup->setItemId($awnid);
 $lookup->setCondition('New');
-//$lookup->setMerchantId('Amazon');
+$lookup->setMerchantId('Amazon');
 $response = $apaiIo->runOperation($lookup);
 $response = json_decode(json_encode(simplexml_load_string($response)), true);
 
@@ -156,12 +156,15 @@ if(!empty($response))
         $succeed_product_array = array();
         $failed_product_array = array();
 
+        $def_qty = (int) getDefaultQuantity($_GET['userid'], $_GET['sourceid']);
+        $def_sku_prefix = getDefaultSkuPrefix($_GET['userid'], $_GET['sourceid']);
+
         foreach ($response['Items']['Item'] as $responseNum => $responseItem)
         {
             //var_dump($responseNum);
             //pre($responseItem);
             //exit;
-
+            
             // categories
             $browseNodes = $responseItem['BrowseNodes']['BrowseNode'];
             if(is_array($browseNodes) && isset($browseNodes[0])){
@@ -184,64 +187,18 @@ if(!empty($response))
                 $awsCategories = json_decode($finalResult);
 
             }
-            // categories 
-            if((int)$responseItem['Offers']['TotalOffers'] == 0){
+            // categories  if total offer is zero than directly failed // temp commented because we will fetching only amazon offers first
+            /*if((int)$responseItem['Offers']['TotalOffers'] == 0){
                 $failed_product_array[] = $responseItem['ASIN'];
                 continue;
-            }
+            }*/
 
             $gotOffer = false;
 
-            /*$MoreOffersUrl = $responseItem['Offers']['MoreOffersUrl'];
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_URL,$MoreOffersUrl);
-            $result=curl_exec($ch);
-            //echo $result;exit;
-            $result = '
-            <html>
-                <head>
-                    <title>Result</title>
-                </head>
-                <body>
-                    <h1>test h1</h1>
-                    <div class"test">hahahahaha</div>
-                    <div id="olpOfferList">
-                        <div class"olpOffer">
-                            <span>45$</span>
-                        </div>
-                    </div>
-                    <div class"test">hahahahaha</div>
-                </body>
-            </html>';
-            curl_close($ch);
-            $doc = new DomDocument;
-            $doc->validateOnParse = true;
-            $doc->loadHTML($result);
-            //$doc->saveHTML();
-
-            $xpath = new DOMXPath($doc);
-            //$row = $xpath->query('*'); ////*[starts-with(@class,"olpOffer")]/div/span/text()
-            // example 3: same as above with wildcard
-            //$elements = $xpath->query('*');
-            $elements = $doc->getElementById('olpOfferList')->nodeValue->item(0);
-            pre($elements);exit;
-            if (!is_null($elements)) {
-              foreach ($elements as $element) {
-                echo "<br/>[". $element->nodeName. "]";
-
-                $nodes = $element->childNodes;
-                foreach ($nodes as $node) {
-                  echo $node->nodeValue. "\n";
-                }
-              }
-            }
-            exit;
-            var_dump($doc->getElementById('olpOfferList')->nodeValue);exit;
-            var_dump($doc->getElementById('olpOfferList')->childNodes->item(2));exit;
-            var_dump(explode("Add to Basket", trim(strip_tags($doc->getElementById('olpOfferList')->nodeValue." Add to Basket"))));
-            echo "The element whose id is 'olpOfferList' is: " . $doc->getElementById('olpOfferList')->tagName . "\n";exit;*/
+            //var_dump($doc->getElementById('olpOfferList')->nodeValue);exit;
+            //var_dump($doc->getElementById('olpOfferList')->childNodes->item(2));exit;
+            //var_dump(explode("Add to Basket", trim(strip_tags($doc->getElementById('olpOfferList')->nodeValue." Add to Basket"))));
+            //echo "The element whose id is 'olpOfferList' is: " . $doc->getElementById('olpOfferList')->tagName . "\n";
 
             if(isset($responseItem['Offers']['Offer']) && isset($responseItem['Offers']['Offer'][0]))
             {
@@ -302,22 +259,116 @@ if(!empty($response))
                     $percentage_save = (isset($responseItem['Offers']['Offer']['OfferListing']['PercentageSaved']))?$responseItem['Offers']['Offer']['OfferListing']['PercentageSaved']:'';
                     $gotOffer = true;
                 }
+
+                $get_product_attribute = $responseItem['ItemAttributes'];
+                $offer_summary = $responseItem['OfferSummary'];
+
+                // for QTY [[CUSTOM]]
+            
+                $totalOffers = (int) $responseItem['Offers']['TotalOffers'];
+                
+                //if($totalOffers > 0){
+                //    if(!empty($def_qty))
+                //    {
+                        $add_product_array[$responseNum]['qty'] = $def_qty;
+                //    }
+                //    else
+                //    {
+                //        $add_product_array[$responseNum]['qty'] = "";
+                //    }
+                //} else {
+                //    $add_product_array[$responseNum]['qty'] = 0;
+                //}
             }
 
             //var_dump($gotOffer);exit;
 
             if(!$gotOffer){
-                $failed_product_array[] = $responseItem['ASIN'];
-                //echo "not get offer for ".$responseItem['ASIN']."<br>";
-                continue;
+                //var_dump($responseItem['ASIN']);exit;
+                //$MoreOffersUrl = $responseItem['Offers']['MoreOffersUrl'];
+                if(!empty($responseItem['Offers']['MoreOffersUrl']) || $responseItem['Offers']['MoreOffersUrl'] == "0"){
+                    if(isset($_REQUEST['sourceid']) && $_REQUEST['sourceid']==2)
+                    {
+                        $urlbef = "https://www.amazon.co.uk/gp/offer-listing/".$responseItem['ASIN']."?";
+                    } else {
+                        $urlbef = "https://www.amazon.com/gp/offer-listing/".$responseItem['ASIN']."?";                        
+                    }
+                } else {
+                    $urlbef = $responseItem['Offers']['MoreOffersUrl'];
+                }
+                $MoreOffersUrl = $urlbef.'&f_new=true&f_primeEligible=true';
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_URL,$MoreOffersUrl);
+                $result=curl_exec($ch);
+                //echo $result;exit;
+                curl_close($ch);
+                $doc = new DomDocument;
+                $doc->validateOnParse = true;
+                $doc->loadHTML($result);
+                //$doc->saveHTML();
+
+                $xpath = new DOMXPath($doc);
+                $classname="olpOffer";
+                $elements = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' $classname ')]");
+                //var_dump($elements);exit;
+                if (!is_null($elements)) {
+                  $curlGotPrice = false;
+                  foreach ($elements as $element) {
+                    //echo "First Child ### <br/>[". $element->nodeName. "]<br/>";
+                    $elem = $element->getAttribute('class');
+                    //var_dump($elem);
+
+                    $nodes = $element->childNodes;
+                    foreach ($nodes as $node) {
+                        //echo '<pre>';print_r($node);echo '</pre>';
+                        //echo $node->nodeValue. "<br>";
+                        //echo "Second Child ###### <br/>[". $node->nodeName. "]<br/>";
+                        $childNodes = $node->childNodes;
+                        //echo count($childNodes);echo "<br>";
+                        foreach ($childNodes as $child) {
+                            if($child->hasAttributes()){
+                               $childElemClasses = $child->getAttribute('class');
+                               //echo $childElemClasses;
+                               if(strpos($childElemClasses, 'olpOfferPrice'))
+                               {
+                                    $curlGotPrice = substr(trim(strip_tags($child->nodeValue)), 2);
+                                    $curlGotPrice = ((float) $curlGotPrice) * 100;
+                                    $gotOffer = true;
+                               }
+                               elseif(strpos($childElemClasses, 'olpFastTrack'))
+                               {
+                                  //echo 'hahahahah';var_dump($child->nodeValue);
+                                  if(strpos($child->nodeValue, 'In stock') === FALSE){
+                                    $curlGotPrice = false;
+                                    $gotOffer = false;
+                                  }
+                               }
+                            }
+                            //echo '<pre>';print_r($child->attributes);echo '</pre>';
+                            //echo "Third Child ######### <br>";
+                            //echo $child->nodeValue. "<br>";
+                        }
+                    }
+                  }
+
+                  if(!$curlGotPrice && !$gotOffer){
+                    $failed_product_array[] = $responseItem['ASIN'];
+                    continue;
+                  } else {
+                    //var_dump($curlGotPrice);exit;
+                    $price = $curlGotPrice;  //[[CUSTOM]] GET PRICE FROM CURL CALL IF NOT GET FROM AMAZON SELLER
+                    $add_product_array[$responseNum]['qty'] = $def_qty;
+                  }
+                }
+                else
+                {
+                    $failed_product_array[] = $responseItem['ASIN'];
+                    continue;
+                }
             }
 
-            //exit;
-
-            $get_product_attribute = $responseItem['ItemAttributes'];
-            $offer_summary = $responseItem['OfferSummary'];
-
-            
             $image_counter =  count($responseItem['ImageSets']['ImageSet']);
             $image_arr = $responseItem['ImageSets']['ImageSet'];
             //pre($image_arr);
@@ -327,26 +378,6 @@ if(!empty($response))
             for($i=0;$i<count($image_arr);$i++)
             {
                 $new_image_array[$i] = $image_arr[$i]['LargeImage']['URL'];
-            }
-
-            $def_qty = (int) getDefaultQuantity($_GET['userid'], $_GET['sourceid']);
-            $def_sku_prefix = getDefaultSkuPrefix($_GET['userid'], $_GET['sourceid']);
-
-            // for QTY [[CUSTOM]]
-            
-            $totalOffers = (int) $responseItem['Offers']['TotalOffers'];
-            
-            if($totalOffers > 0){
-                if(!empty($def_qty))
-                {
-                    $add_product_array[$responseNum]['qty'] = $def_qty;
-                }
-                else
-                {
-                    $add_product_array[$responseNum]['qty'] = "";
-                }
-            } else {
-                $add_product_array[$responseNum]['qty'] = 0;
             }
 
             //pre($add_product_array);

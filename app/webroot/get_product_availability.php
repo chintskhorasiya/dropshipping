@@ -50,14 +50,15 @@ $lookup = new Lookup();
 //$lookup->setIdType('ASIN');
 $lookup->setResponseGroup(array('ItemAttributes', 'Offers')); // More detailed information
 $lookup->setItemId($awnid);
-$lookup->setAvailability('Available');
+//$lookup->setAvailability('Available');
+$lookup->setOfferListingId('fEN2gU5e6EKZBPj3wRaIUfmkpBKd9CWsRWQjMs8PlDOLOm04fgTyVfG7uS8zNqsowGRgXQox7p%2BIoD6RTp2Di9sMQAVxrBxkfDMvKMjyfnAE4j6C2ImeuPF4kM3n8KGYvSiI991qiQInsLUaAupDDsfQcL8GqWrs');
 $lookup->setCondition('All');
 $response = $apaiIo->runOperation($lookup);
 
 $response = json_decode (json_encode (simplexml_load_string ($response)), true);
 
-//pre($response);
-//exit;
+pre($response);
+exit;
 //pre($response['Items']['Item']['BrowseNodes']['BrowseNode']);exit;
 
 function pre($data)
