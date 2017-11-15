@@ -258,7 +258,7 @@ class ListingsController extends AppController {
             //check awnid
             $awnidArr = explode(',', $awnid);
 
-            $check_product = $this->Product->find('all', array('conditions' => array('user_id'=>$userid,'source_id'=> $sourceid,'asin_no IN'=>$awnidArr)));
+            $check_product = $this->Product->find('all', array('conditions' => array('user_id'=>$userid,'source_id'=> $sourceid,'asin_no IN'=>$awnidArr,'status IN'=>array('0','1') )));
 
 
 
@@ -363,7 +363,7 @@ class ListingsController extends AppController {
 
         $this->paginate = array(
             'conditions' => array('user_id'=>$userid, 'status IN'=> array(0,1)),
-            'limit' => 10,
+            'limit' => 50,
             'order' => array('id' => 'desc')
         );
 
@@ -1486,6 +1486,55 @@ class ListingsController extends AppController {
             return $this->redirect($return_url);
         }
 
+    }
+
+    function listing_delete_requests(){
+
+        if(isset($this->data['product_checks']))
+        {
+            $productsSelectedArr = $this->data['product_checks'];
+            $productsNum = count($productsSelectedArr);
+
+            if($productsNum > 0)
+            {
+                $this->loadmodel('Product');
+
+                $deletedCount = 0;
+
+                foreach ($productsSelectedArr as $productDelKey => $productToDelete) {
+                    var_dump($productToDelete);
+
+                    $this->Product->id = $this->Product->field('id', array('id' => $productToDelete));
+                    if ($this->Product->id)
+                    {
+                        //$this->pre($this->Product);exit;
+                        $thisDelete = $this->Product->saveField('status', 2);
+                        $modified_date = date('Y-m-d H:i:s');
+                        $thisDeleteMod = $this->Product->saveField('modified_date', $modified_date);
+
+                        if($thisDelete && $thisDeleteMod){
+                            $deletedCount++;
+                        }
+
+                    }
+                }
+
+                $_SESSION['success_msg'] = "Successfully deleted for ".$deletedCount." item(s).";
+                $return_url = DEFAULT_URL.'listings/listing_requests/';
+                return $this->redirect($return_url);    
+            }
+            else
+            {
+                $_SESSION['error_msg'] = "You have not selected any item.";
+                $return_url = DEFAULT_URL.'listings/listing_requests/';
+                return $this->redirect($return_url);    
+            }
+        }
+        else
+        {
+            $return_url = DEFAULT_URL.'listings/listing_requests/';
+            return $this->redirect($return_url);
+        }
     }
 
     function listing_revise($productId)
