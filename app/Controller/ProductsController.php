@@ -670,7 +670,7 @@ class ProductsController extends AppController {
                                             $curr_offer_price_marginadded = $curr_offer_price;
                                         }
                                         
-                                        if($curr_offer_price > $curr_ebay_price){
+                                        if($curr_offer_price_marginadded > $curr_ebay_price){
                                             if((!empty($uk_priceupdated_items[$uk_item['ASIN']]) && $uk_priceupdated_items[$uk_item['ASIN']] < $curr_offer_price_marginadded) || empty($uk_priceupdated_items[$uk_item['ASIN']])){
                                                 //array_push($us_priceupdated_items, $uk_item['ASIN']);
                                                 $uk_priceupdated_items[$uk_item['ASIN']] = $curr_offer_price_marginadded;
@@ -722,7 +722,7 @@ class ProductsController extends AppController {
                                     }
                                     //echo $uk_item['ASIN']." => ".$curr_offer_price." => ".$curr_offer_price_marginadded." => ".$curr_ebay_price."<br>";
 
-                                    if($curr_offer_price > $curr_ebay_price){
+                                    if($curr_offer_price_marginadded > $curr_ebay_price){
                                         if((!empty($uk_priceupdated_items[$uk_item['ASIN']]) && $uk_priceupdated_items[$uk_item['ASIN']] < $curr_offer_price_marginadded) || empty($uk_priceupdated_items[$uk_item['ASIN']])){
                                             //array_push($uk_priceupdated_items, $uk_item['ASIN']);
                                             $uk_priceupdated_items[$uk_item['ASIN']] = $curr_offer_price_marginadded;
@@ -937,7 +937,7 @@ class ProductsController extends AppController {
                                     $curr_offer_price_marginadded = $curr_offer_price;
                                 }
                                 
-                                if($curr_offer_price > $curr_ebay_price){
+                                if($curr_offer_price_marginadded > $curr_ebay_price){
                                     if((!empty($us_priceupdated_items[$us_item['ASIN']]) && $us_priceupdated_items[$us_item['ASIN']] < $curr_offer_price_marginadded) || empty($us_priceupdated_items[$us_item['ASIN']])){
                                         //array_push($us_priceupdated_items, $us_item['ASIN']);
                                         $us_priceupdated_items[$us_item['ASIN']] = $curr_offer_price_marginadded;
@@ -983,7 +983,7 @@ class ProductsController extends AppController {
                                 }
                                 //echo $us_item['ASIN']." => ".$curr_offer_price." => ".$curr_offer_price_marginadded." => ".$curr_ebay_price."<br>";
 
-                                if($curr_offer_price > $curr_ebay_price){
+                                if($curr_offer_price_marginadded > $curr_ebay_price){
                                     if((!empty($us_priceupdated_items[$us_item['ASIN']]) && $us_priceupdated_items[$us_item['ASIN']] < $curr_offer_price_marginadded) || empty($us_priceupdated_items[$us_item['ASIN']])){
                                         //array_push($us_priceupdated_items, $us_item['ASIN']);
                                         $us_priceupdated_items[$us_item['ASIN']] = $curr_offer_price_marginadded;
