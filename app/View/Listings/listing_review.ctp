@@ -24,6 +24,8 @@
             description += '<ul>'+$('#product_description ul').html()+'</ul>';
 
             //$('#itemDescription').val(description);
+            var proDescFrame = $('#proDescFrame').html();
+            $('#itemDescription').val(proDescFrame);
         });
 
         function add_moredata()
@@ -107,7 +109,7 @@
                     }
                     ?>
                     <section class="panel">
-                        <div class="panel-body" style="height: 420px;overflow: auto;">
+                        <div class="panel-body" style="height: 420px;overflow: auto;" id="proDescFrame">
                             <h1><?php echo stripslashes($product_data['Product']['title']); ?></h1>
 
                             <div class="col-md-5">

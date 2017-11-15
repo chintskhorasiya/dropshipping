@@ -46,7 +46,12 @@
                             <h4>Recent listing requests</h4>
                             <p>Listing requests usually take less than 45 minutes.</p>
                             <div class="adv-table">
+                                <?php
+                                echo $this->Form->create('listingRequests',array('url' => array('controller' => 'listings/listing_delete_requests', 'action' => 'index')));
+                                ?>
+                                <!--<form name="listing_requests_form" id="listing_requests_form">-->
                                 <input style="display: none;" type="submit" class="btn btn-info" value="Retry Failed Listings">
+                                <input type="submit" class="btn btn-info" value="Delete Listings">
                                 <a style="display:none;" href="<?php echo DEFAULT_URL ?>products/checkavail" class="btn btn-info">Revise Stock Availability</a>
 
                                 <span class="export-b" style="display: none;">
@@ -68,10 +73,11 @@
                                 <table class="display table table-bordered table-striped" id="dynamic-table">
                                     <thead>
                                         <tr>
+                                            <th width="10%"></th>
                                             <th width="15%">Time Requested</th>
                                             <th width="20%">Source Product</th>
                                             <th width="5%">Success?</th>
-                                            <th width="60%">Listing</th>
+                                            <th width="50%">Listing</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -83,6 +89,7 @@
                                             {
                                             ?>
                                             <tr class="gradeA">
+                                                <td><input type="checkbox" name="product_checks[]" value ="<?php echo $product_data[$i]['Product']['id']; ?>"></td>
                                                 <td class="align-center"><?php echo $product_data[$i]['Product']['created_date']?></td>
                                                 <td>
                                                     <div class="btn-group zn-listing-link">
@@ -161,6 +168,7 @@
 
                                     </tbody>
                                 </table>
+                                </form>
                             </div>
                             <?php
                             //echo $this->Paginator->sort('user_id', null, array('direction' => 'desc'));
