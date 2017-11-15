@@ -452,16 +452,309 @@ class ProductsController extends AppController {
     function reviseitems(){
 
         // first entry for cron
-
+        
         $this->loadmodel('ReviseItems');
+        $limit = 10;
+        $last_revise_page_data = $this->ReviseItems->find('first', array('conditions' => array('status'=> '1'), 'order' => array('id' => 'DESC')));
+        
+
+        $total_uk_products_data = $this->Product->find('count', array('conditions' => array('status IN'=> array('0','1'), 'source_id'=>'2', 'ebay_id <>' => 'NULL')));
+        $last_uk_page = (int) $last_revise_page_data['ReviseItems']['last_uk_page_id'];
+        $next_uk_page = $last_uk_page + 1;
+        $lastukcount = $next_uk_page * $limit;
+        if(($lastukcount - $limit) > $total_uk_products_data){
+            $next_uk_page = 1;
+        }
+        $uk_products_data = $this->Product->find('all', array('conditions' => array('status IN'=> array('0','1'), 'source_id'=>'2', 'ebay_id <>' => 'NULL'), 'limit' => $limit, 'page' => $next_uk_page ));
+        
+
+        $total_us_products_data = $this->Product->find('count', array('conditions' => array('status IN'=> array('0','1'), 'source_id'=>'1', 'ebay_id <>' => 'NULL')));
+        $last_us_page = (int) $last_revise_page_data['ReviseItems']['last_us_page_id'];
+        $next_us_page = $last_us_page + 1;
+        $lastuscount = $next_us_page * $limit;
+        if(($lastuscount - $limit) > $total_us_products_data){
+            $next_us_page = 1;
+        }
+
         $crondata['ReviseItems']['start_date'] = date('Y-m-d H:i:s');
+        $crondata['ReviseItems']['last_uk_page_id'] = $next_uk_page;
+        $crondata['ReviseItems']['last_us_page_id'] = $next_us_page;
         $this->ReviseItems->set($crondata);
         $revisedResult = $this->ReviseItems->save($crondata);
         $revisedID = $revisedResult['ReviseItems']['id'];
-        
+        //exit;
         // first entry for cron
 
-        $us_products_data = $this->Product->find('all', array('conditions' => array('status IN'=> array('0','1'), 'source_id'=>'1', 'ebay_id <>' => 'NULL')));
+
+        if(count($uk_products_data) > 0)
+        {
+            $ukpdIds = array();
+            
+            $uk_out_of_stock_items = array();
+            $uk_priceupdated_items = array();
+
+            foreach ($uk_products_data as $ukpdkey => $ukpdvalue)
+            {    
+                array_push($ukpdIds, $ukpdvalue['Product']['asin_no']);
+            }
+
+            $ukpdIds = array_chunk($ukpdIds, 10);
+
+            foreach ($ukpdIds as $ukpd_slotkey => $ukpd_slot)
+            {
+                $country_cod = 'co.uk';
+                $siteId = Constants\SiteIds::GB;
+
+                $client = new \GuzzleHttp\Client();
+                $request = new \ApaiIO\Request\GuzzleRequest($client);
+
+                $conf = new GenericConfiguration();
+                $conf
+                    ->setCountry($country_cod)
+                    ->setAccessKey(AWS_API_KEY)
+                    ->setSecretKey(AWS_API_SECRET_KEY)
+                    ->setAssociateTag(AWS_ASSOCIATE_TAG)
+                    ->setRequest($request);
+
+                $apaiIo = new ApaiIO($conf);
+
+                //$awnid = $product_asin_no;
+
+                $lookup = new Lookup();
+                $lookup->setResponseGroup(array('Offers')); // More detailed information
+                $lookup->setItemId($ukpd_slot);
+                $lookup->setCondition('New');
+                $lookup->setMerchantId('Amazon');
+                $response = $apaiIo->runOperation($lookup);
+                $response = json_decode (json_encode (simplexml_load_string ($response)), true);
+
+                //$this->pre($response);
+
+                if(isset($response['Items']['Request']['Errors']['Error']['Message']))
+                {
+                    $response['Items']['Request']['Errors']['Error']['Message'];
+                }
+                else
+                {
+                    if(!isset($response['Items']['Item'][0])){
+                        $tempUkItem = $response['Items']['Item'];
+                        unset($response['Items']['Item']);
+                        $response['Items']['Item'][0] = $tempUkItem;
+                    }
+                    
+                    if(isset($response['Items']['Item'][0])){
+                        $uk_items = $response['Items']['Item'];
+                        foreach ($uk_items as $uk_items_key => $uk_item)
+                        {
+                            $uk_item_totaloffers = (int) $uk_item['Offers']['TotalOffers'];
+
+                            $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'qty', 'user_id', 'source_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$uk_item['ASIN'])));
+
+                            $curr_ebay_qty = $curr_ebay_price_data['Product']['qty'];
+                            
+                            $this->loadmodel('SourceSettings');
+
+                            $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
+
+
+                            if($uk_item_totaloffers <= 0 && $curr_ebay_qty > 0){
+
+                                if(!empty($uk_item['Offers']['MoreOffersUrl']) || $uk_item['Offers']['MoreOffersUrl'] == "0"){
+                                    $urlbef = "https://www.amazon.co.uk/gp/offer-listing/".$uk_item['ASIN']."?";
+                                } else {
+                                    //$urlbef = $responseItem['Offers']['MoreOffersUrl'];
+                                    $urlbef = "https://www.amazon.co.uk/gp/offer-listing/".$uk_item['ASIN']."?";
+                                }
+                                $MoreOffersUrl = $urlbef.'&f_new=true&f_primeEligible=true';
+                                //echo "<br>".$MoreOffersUrl."<br>";exit;
+
+                                $ch = curl_init();
+                                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                                curl_setopt($ch, CURLOPT_URL,$MoreOffersUrl);
+                                $result=curl_exec($ch);
+                                //echo $result;exit;
+                                curl_close($ch);
+
+                                if(!empty($result)){
+
+                                    libxml_use_internal_errors(true);
+                                    $doc = new DomDocument;
+                                    //var_dump($doc);exit;
+                                    //$doc->validateOnParse = true;
+                                    $doc->loadHTML($result);
+                                    //var_dump($doc);exit;
+                                    $doc->saveHTML();
+                                    //var_dump($doc);exit;
+                                    $xpath = new DOMXPath($doc);
+                                    $classname="olpOffer";
+                                    $elements = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' $classname ')]");
+                                    //var_dump($elements);exit;
+                                    if (!is_null($elements)) {
+                                      $curlGotPrice = false;
+                                      $gotPrime = false;
+                                      $gotOffer = false;
+                                      foreach ($elements as $element) {
+                                        //echo "First Child ### <br/>[". $element->nodeName. "]<br/>";
+                                        $elem = $element->getAttribute('class');
+                                        //var_dump($elem);
+
+                                        $nodes = $element->childNodes;
+                                        foreach ($nodes as $node) {
+                                            //echo '<pre>';print_r($node);echo '</pre>';
+                                            //echo $node->nodeValue. "<br>";
+                                            //echo "Second Child ###### <br/>[". $node->nodeName. "]<br/>";
+                                            $childNodes = $node->childNodes;
+                                            //echo count($childNodes);echo "<br>";
+                                            foreach ($childNodes as $child) {
+                                                if($child->hasAttributes()){
+                                                   $childElemClasses = $child->getAttribute('class');
+                                                   //echo "<br>".$childElemClasses."<br>";
+                                                   if(strpos($childElemClasses, 'olpOfferPrice'))
+                                                   {
+                                                        $curlGotPrice = substr(trim(strip_tags($child->nodeValue)), 2);
+                                                        $curlGotPrice = ((float) $curlGotPrice) * 100;
+                                                        $gotOffer = true;
+                                                        //var_dump($curlGotPrice);
+                                                   }
+                                                   elseif(strpos($childElemClasses, 'olpFastTrack'))
+                                                   {
+                                                      //echo 'hahahahah';var_dump($child->nodeValue);
+                                                      if(strpos($child->nodeValue, 'In stock') === FALSE){
+                                                        $curlGotPrice = false;
+                                                        $gotOffer = false;
+                                                        //var_dump($gotOffer);
+                                                      }
+                                                   }
+                                                   elseif(strpos($childElemClasses, 'supersaver') !== FALSE)
+                                                   {
+                                                      //echo "<br>here gotPrime true<br>";
+                                                      $gotPrime = true;
+                                                   }
+
+                                                   
+                                                }
+                                                //echo '<pre>';print_r($child->attributes);echo '</pre>';
+                                                //echo "Third Child ######### <br>";
+                                                //echo $child->nodeValue. "<br>";
+                                            }
+
+                                            if($gotOffer && $curlGotPrice && $gotPrime){
+                                                //echo '<br>it will continue2<br>';
+                                                break;
+                                            }
+                                        }
+
+                                        if($gotOffer && $curlGotPrice && $gotPrime){
+                                            //echo '<br>it will continue3<br>';
+                                            break;
+                                        }
+
+                                      }
+
+                                      //var_dump($curlGotPrice);
+                                      //var_dump($gotOffer);
+                                      //var_dump($gotPrime);
+                                      //exit;
+
+                                      if($curlGotPrice && $gotOffer && $gotPrime){
+                                        
+                                        //var_dump($curlGotPrice);exit;
+                                        $curr_offer_price = (float) $curlGotPrice/100;  //[[CUSTOM]] GET PRICE FROM CURL CALL IF NOT GET FROM AMAZON SELLER
+                                        //var_dump($price);exit;
+                                        $curr_ebay_price = (float) $curr_ebay_price_data['Product']['ebay_price'];
+                                        $curr_marginpercent = (float) $curr_sourcesettings_data['SourceSettings']['marginpercent'];
+                                        if(!empty($curr_marginpercent)){
+                                            $curr_offer_price_marginadded = (float) round((($curr_offer_price*$curr_marginpercent)/100) + $curr_offer_price, 2);
+                                        } else {
+                                            $curr_offer_price_marginadded = $curr_offer_price;
+                                        }
+                                        
+                                        if($curr_offer_price > $curr_ebay_price){
+                                            if((!empty($uk_priceupdated_items[$uk_item['ASIN']]) && $uk_priceupdated_items[$uk_item['ASIN']] < $curr_offer_price_marginadded) || empty($uk_priceupdated_items[$uk_item['ASIN']])){
+                                                //array_push($us_priceupdated_items, $uk_item['ASIN']);
+                                                $uk_priceupdated_items[$uk_item['ASIN']] = $curr_offer_price_marginadded;
+                                            }
+                                        }
+
+                                      } else {
+                                        
+                                        array_push($uk_out_of_stock_items, $uk_item['ASIN']);
+                                      
+                                      }
+
+                                    } else {
+                                        
+                                        array_push($uk_out_of_stock_items, $uk_item['ASIN']);
+                                      
+                                    }
+
+                                }
+                                else
+                                {
+                                    array_push($uk_out_of_stock_items, $uk_item['ASIN']);
+                                } 
+
+                                //array_push($uk_out_of_stock_items, $uk_item['ASIN']);
+
+                            } else {
+                                
+                                if(!isset($uk_item['Offers']['Offer'][0])){
+                                    $tempUkOffer = $uk_item['Offers']['Offer'];
+                                    unset($uk_item['Offers']['Offer']);
+                                    $uk_item['Offers']['Offer'][0] = $tempUkOffer;
+                                }
+                                
+                                $uk_offers_arr = $uk_item['Offers']['Offer'];
+                                foreach ($uk_offers_arr as $uk_offers_arr_key => $uk_offers_arr_value) {
+                                    //$this->pre($uk_offers_arr_value);
+                                    $curr_offer_price = (float) ($uk_offers_arr_value['OfferListing']['Price']['Amount']/100);
+                                    //$this->pre($curr_offer_price);
+
+                                    //$this->pre($curr_ebay_price_data);
+                                    //$this->pre($curr_sourcesettings_data);
+                                    $curr_ebay_price = (float) $curr_ebay_price_data['Product']['ebay_price'];
+                                    $curr_marginpercent = (float) $curr_sourcesettings_data['SourceSettings']['marginpercent'];
+                                    if(!empty($curr_marginpercent)){
+                                        $curr_offer_price_marginadded = (float) round((($curr_offer_price*$curr_marginpercent)/100) + $curr_offer_price, 2);
+                                    } else {
+                                        $curr_offer_price_marginadded = $curr_offer_price;
+                                    }
+                                    //echo $uk_item['ASIN']." => ".$curr_offer_price." => ".$curr_offer_price_marginadded." => ".$curr_ebay_price."<br>";
+
+                                    if($curr_offer_price > $curr_ebay_price){
+                                        if((!empty($uk_priceupdated_items[$uk_item['ASIN']]) && $uk_priceupdated_items[$uk_item['ASIN']] < $curr_offer_price_marginadded) || empty($uk_priceupdated_items[$uk_item['ASIN']])){
+                                            //array_push($uk_priceupdated_items, $uk_item['ASIN']);
+                                            $uk_priceupdated_items[$uk_item['ASIN']] = $curr_offer_price_marginadded;
+                                        }
+                                    }
+                                }
+                                
+                            }
+                        }
+                    }
+                }
+
+                //echo "<br>";
+                //echo "________________________________________________________________";   
+                //echo "<br>";
+                
+            }
+
+            echo "Out of stock items (UK)";
+            echo "<br>";
+            $this->pre($uk_out_of_stock_items);
+            echo "________________________________________________________________";   
+            echo "<br>";
+            echo "Price updated items (UK)";
+            echo "<br>";
+            $this->pre($uk_priceupdated_items);
+            echo "________________________________________________________________";   
+            echo "<br>";
+        }
+
+
+        $us_products_data = $this->Product->find('all', array('conditions' => array('status IN'=> array('0','1'), 'source_id'=>'1', 'ebay_id <>' => 'NULL'), 'limit' => $limit, 'page' => $next_us_page ));
 
         //$this->pre($us_products_data);exit;
 
@@ -509,7 +802,7 @@ class ProductsController extends AppController {
                 $lookup->setResponseGroup(array('Offers')); // More detailed information
                 $lookup->setItemId($uspd_slot);
                 $lookup->setCondition('New');
-                //$lookup->setMerchantId('Amazon');
+                $lookup->setMerchantId('Amazon');
                 $response = $apaiIo->runOperation($lookup);
                 $response = json_decode (json_encode (simplexml_load_string ($response)), true);
 
@@ -521,132 +814,164 @@ class ProductsController extends AppController {
                 }
                 else
                 {
-                    if(isset($response['Items']['Item'][0])){
-                        $us_items = $response['Items']['Item'];
-                        foreach ($us_items as $us_items_key => $us_item)
-                        {
-                            $us_item_totaloffers = (int) $us_item['Offers']['TotalOffers'];
-                            $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'qty', 'user_id', 'source_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$us_item['ASIN'])));
-
-                            $curr_ebay_qty = $curr_ebay_price_data['Product']['qty'];
-
-                            $this->loadmodel('SourceSettings');
-
-                            $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
-
-
-                            if($us_item_totaloffers <= 0 && $curr_ebay_qty > 0){
-                                array_push($us_out_of_stock_items, $us_item['ASIN']);
-                            } else {
-                                if(isset($us_item['Offers']['Offer'][0])){
-                                    $us_offers_arr = $us_item['Offers']['Offer'];
-                                    foreach ($us_offers_arr as $us_offers_arr_key => $us_offers_arr_value) {
-                                        //$this->pre($us_offers_arr_value);
-                                        $curr_offer_price = (float) ($us_offers_arr_value['OfferListing']['Price']['Amount']/100);
-                                        //$this->pre($curr_offer_price);
-                                        
-                                        //$this->pre($curr_ebay_price_data);
-                                        //$this->pre($curr_sourcesettings_data);
-                                        $curr_ebay_price = (float) $curr_ebay_price_data['Product']['ebay_price'];
-                                        $curr_marginpercent = (float) $curr_sourcesettings_data['SourceSettings']['marginpercent'];
-                                        if(!empty($curr_marginpercent)){
-                                            $curr_offer_price_marginadded = (float) round((($curr_offer_price*$curr_marginpercent)/100) + $curr_offer_price, 2);
-                                        } else {
-                                            $curr_offer_price_marginadded = $curr_offer_price;
-                                        }
-                                        //echo $us_item['ASIN']." => ".$curr_offer_price." => ".$curr_offer_price_marginadded." => ".$curr_ebay_price."<br>";
-
-                                        if($curr_offer_price > $curr_ebay_price){
-                                            if((!empty($us_priceupdated_items[$us_item['ASIN']]) && $us_priceupdated_items[$us_item['ASIN']] < $curr_offer_price_marginadded) || empty($us_priceupdated_items[$us_item['ASIN']])){
-                                                //array_push($us_priceupdated_items, $us_item['ASIN']);
-                                                $us_priceupdated_items[$us_item['ASIN']] = $curr_offer_price_marginadded;
-                                            }
-                                        }
-                                    }
-                                    
-                                } else {
-                                    $us_offers_arr_value = $us_item['Offers']['Offer'];
-                                    //$this->pre($us_offers_arr_value);
-                                    $curr_offer_price = (float) ($us_offers_arr_value['OfferListing']['Price']['Amount']/100);
-                                    //$this->pre($curr_offer_price);
-
-                                    $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'source_id', 'user_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$us_item['ASIN'])));
-                                    $this->loadmodel('SourceSettings');
-
-                                    $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
-
-                                    //$this->pre($curr_ebay_price_data);
-                                    //$this->pre($curr_sourcesettings_data);
-                                    $curr_ebay_price = (float) $curr_ebay_price_data['Product']['ebay_price'];
-                                    $curr_marginpercent = (float) $curr_sourcesettings_data['SourceSettings']['marginpercent'];
-                                    if(!empty($curr_marginpercent)){
-                                        $curr_offer_price_marginadded = (float) round((($curr_offer_price*$curr_marginpercent)/100) + $curr_offer_price, 2);
-                                    } else {
-                                        $curr_offer_price_marginadded = $curr_offer_price;
-                                    }
-                                    //echo $us_item['ASIN']." => ".$curr_offer_price." => ".$curr_offer_price_marginadded." => ".$curr_ebay_price."<br>";
-
-                                    if($curr_offer_price > $curr_ebay_price){
-                                        if((!empty($us_priceupdated_items[$us_item['ASIN']]) && $us_priceupdated_items[$us_item['ASIN']] < $curr_offer_price_marginadded) || empty($us_priceupdated_items[$us_item['ASIN']])){
-                                            //array_push($us_priceupdated_items, $us_item['ASIN']);
-                                            $us_priceupdated_items[$us_item['ASIN']] = $curr_offer_price_marginadded;
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                    if(!isset($response['Items']['Item'][0])){
+                        $tempUsItem = $response['Items']['Item'];
+                        unset($response['Items']['Item']);
+                        $response['Items']['Item'][0] = $tempUsItem;
                     }
-                    else
-                    {
-                        $us_item = $response['Items']['Item'];
-                        $us_item_totaloffers = (int) $us_item['Offers']['TotalOffers'];
 
-                        $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'qty', 'source_id', 'user_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$us_item['ASIN'])));
+                    $us_items = $response['Items']['Item'];
+                    foreach ($us_items as $us_items_key => $us_item)
+                    {
+                        $us_item_totaloffers = (int) $us_item['Offers']['TotalOffers'];
+                        $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'qty', 'user_id', 'source_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$us_item['ASIN'])));
 
                         $curr_ebay_qty = $curr_ebay_price_data['Product']['qty'];
-                        
+
                         $this->loadmodel('SourceSettings');
 
                         $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
 
-                        if($us_item_totaloffers <= 0 && $curr_ebay_qty > 0){
-                            array_push($us_out_of_stock_items, $us_item['ASIN']);
-                        } else {
-                            if(isset($us_item['Offers']['Offer'][0])){
-                                $us_offers_arr = $us_item['Offers']['Offer'];
-                                foreach ($us_offers_arr as $us_offers_arr_key => $us_offers_arr_value) {
-                                    //$this->pre($us_offers_arr_value);
-                                    $curr_offer_price = (float) ($us_offers_arr_value['OfferListing']['Price']['Amount']/100);
-                                    //$this->pre($curr_offer_price);
-                                    //$this->pre($curr_ebay_price_data);
-                                    //$this->pre($curr_sourcesettings_data);
-                                    $curr_ebay_price = (float) $curr_ebay_price_data['Product']['ebay_price'];
-                                    $curr_marginpercent = (float) $curr_sourcesettings_data['SourceSettings']['marginpercent'];
-                                    if(!empty($curr_marginpercent)){
-                                        $curr_offer_price_marginadded = (float) round((($curr_offer_price*$curr_marginpercent)/100) + $curr_offer_price, 2);
-                                    } else {
-                                        $curr_offer_price_marginadded = $curr_offer_price;
-                                    }
-                                    //echo $curr_offer_price." => ".$curr_offer_price_marginadded." => ".$curr_ebay_price."<br>";
 
-                                    if($curr_offer_price > $curr_ebay_price){
-                                        if((!empty($us_priceupdated_items[$us_item['ASIN']]) && $us_priceupdated_items[$us_item['ASIN']] < $curr_offer_price_marginadded) || empty($us_priceupdated_items[$us_item['ASIN']])){
-                                            //array_push($us_priceupdated_items, $us_item['ASIN']);
-                                            $us_priceupdated_items[$us_item['ASIN']] = $curr_offer_price_marginadded;
+                        if($us_item_totaloffers <= 0 && $curr_ebay_qty > 0){
+
+                            /*if(!empty($us_item['Offers']['MoreOffersUrl']) || $us_item['Offers']['MoreOffersUrl'] == "0"){
+                                $urlbef = "https://www.amazon.com/gp/offer-listing/".$us_item['ASIN']."?";
+                            } else {
+                                $urlbef = $responseItem['Offers']['MoreOffersUrl'];
+                            }
+                            $MoreOffersUrl = $urlbef.'&f_new=true&f_primeEligible=true';
+                            echo "<br>".$MoreOffersUrl."<br>";
+
+                            $ch = curl_init();
+                            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                            curl_setopt($ch, CURLOPT_URL,$MoreOffersUrl);
+                            $result=curl_exec($ch);
+                            //echo $result;exit;
+                            curl_close($ch);
+                            $doc = new DomDocument;
+                            $doc->validateOnParse = true;
+                            $doc->loadHTML($result);
+                            //$doc->saveHTML();
+                            $xpath = new DOMXPath($doc);
+                            $classname="olpOffer";
+                            $elements = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' $classname ')]");
+                            //var_dump($elements);exit;
+                            if (!is_null($elements)) {
+                              $curlGotPrice = false;
+                              $gotPrime = false;
+                              $gotOffer = false;
+                              foreach ($elements as $element) {
+                                //echo "First Child ### <br/>[". $element->nodeName. "]<br/>";
+                                $elem = $element->getAttribute('class');
+                                //var_dump($elem);
+
+                                $nodes = $element->childNodes;
+                                foreach ($nodes as $node) {
+                                    //echo '<pre>';print_r($node);echo '</pre>';
+                                    //echo $node->nodeValue. "<br>";
+                                    //echo "Second Child ###### <br/>[". $node->nodeName. "]<br/>";
+                                    $childNodes = $node->childNodes;
+                                    //echo count($childNodes);echo "<br>";
+                                    foreach ($childNodes as $child) {
+                                        if($child->hasAttributes()){
+                                           $childElemClasses = $child->getAttribute('class');
+                                           //echo "<br>".$childElemClasses."<br>";
+                                           if(strpos($childElemClasses, 'olpOfferPrice'))
+                                           {
+                                                $curlGotPrice = substr(trim(strip_tags($child->nodeValue)), 2);
+                                                $curlGotPrice = ((float) $curlGotPrice) * 100;
+                                                $gotOffer = true;
+                                                //var_dump($curlGotPrice);
+                                           }
+                                           elseif(strpos($childElemClasses, 'olpFastTrack'))
+                                           {
+                                              //echo 'hahahahah';var_dump($child->nodeValue);
+                                              if(strpos($child->nodeValue, 'In stock') === FALSE){
+                                                $curlGotPrice = false;
+                                                $gotOffer = false;
+                                                //var_dump($gotOffer);
+                                              }
+                                           }
+                                           elseif(strpos($childElemClasses, 'supersaver') !== FALSE)
+                                           {
+                                              //echo "<br>here gotPrime true<br>";
+                                              $gotPrime = true;
+                                           }
+
                                         }
+                                        //echo '<pre>';print_r($child->attributes);echo '</pre>';
+                                        //echo "Third Child ######### <br>";
+                                        //echo $child->nodeValue. "<br>";
+                                    }
+
+                                    if($gotOffer && $curlGotPrice && $gotPrime){
+                                        //echo '<br>it will continue2<br>';
+                                        break;
                                     }
                                 }
-                            } else {
-                                $us_offers_arr_value = $us_item['Offers']['Offer'];
+
+                                if($gotOffer && $curlGotPrice && $gotPrime){
+                                    //echo '<br>it will continue3<br>';
+                                    break;
+                                }
+
+                              }
+
+                              //var_dump($curlGotPrice);
+                              //var_dump($gotOffer);
+                              //var_dump($gotPrime);
+                              //exit;
+
+                              if($curlGotPrice && $gotOffer && $gotPrime){
+                                
+                                //var_dump($curlGotPrice);exit;
+                                $curr_offer_price = $curlGotPrice;  //[[CUSTOM]] GET PRICE FROM CURL CALL IF NOT GET FROM AMAZON SELLER
+                                //var_dump($price);exit;
+                                $curr_ebay_price = (float) $curr_ebay_price_data['Product']['ebay_price'];
+                                $curr_marginpercent = (float) $curr_sourcesettings_data['SourceSettings']['marginpercent'];
+                                if(!empty($curr_marginpercent)){
+                                    $curr_offer_price_marginadded = (float) round((($curr_offer_price*$curr_marginpercent)/100) + $curr_offer_price, 2);
+                                } else {
+                                    $curr_offer_price_marginadded = $curr_offer_price;
+                                }
+                                
+                                if($curr_offer_price > $curr_ebay_price){
+                                    if((!empty($us_priceupdated_items[$us_item['ASIN']]) && $us_priceupdated_items[$us_item['ASIN']] < $curr_offer_price_marginadded) || empty($us_priceupdated_items[$us_item['ASIN']])){
+                                        //array_push($us_priceupdated_items, $us_item['ASIN']);
+                                        $us_priceupdated_items[$us_item['ASIN']] = $curr_offer_price_marginadded;
+                                    }
+                                }
+
+                              } else {
+                                
+                                array_push($us_out_of_stock_items, $us_item['ASIN']);
+                              
+                              }
+
+                            }
+                            else
+                            {
+                                array_push($us_out_of_stock_items, $us_item['ASIN']);
+                            }*/
+
+                            array_push($us_out_of_stock_items, $us_item['ASIN']);
+
+                        } else {
+
+                            if(!isset($us_item['Offers']['Offer'][0])){
+                                $tempUsOffer = $us_item['Offers']['Offer'];
+                                unset($us_item['Offers']['Offer']);
+                                $us_item['Offers']['Offer'][0] = $tempUsOffer;
+                            }
+                            
+                            $us_offers_arr = $us_item['Offers']['Offer'];
+                            foreach ($us_offers_arr as $us_offers_arr_key => $us_offers_arr_value) {
                                 //$this->pre($us_offers_arr_value);
                                 $curr_offer_price = (float) ($us_offers_arr_value['OfferListing']['Price']['Amount']/100);
                                 //$this->pre($curr_offer_price);
-
-                                $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'source_id', 'user_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$us_item['ASIN'])));
-                                    $this->loadmodel('SourceSettings');
-
-                                $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
-
+                                
                                 //$this->pre($curr_ebay_price_data);
                                 //$this->pre($curr_sourcesettings_data);
                                 $curr_ebay_price = (float) $curr_ebay_price_data['Product']['ebay_price'];
@@ -656,7 +981,7 @@ class ProductsController extends AppController {
                                 } else {
                                     $curr_offer_price_marginadded = $curr_offer_price;
                                 }
-                                //echo $curr_offer_price." => ".$curr_offer_price_marginadded." => ".$curr_ebay_price."<br>";
+                                //echo $us_item['ASIN']." => ".$curr_offer_price." => ".$curr_offer_price_marginadded." => ".$curr_ebay_price."<br>";
 
                                 if($curr_offer_price > $curr_ebay_price){
                                     if((!empty($us_priceupdated_items[$us_item['ASIN']]) && $us_priceupdated_items[$us_item['ASIN']] < $curr_offer_price_marginadded) || empty($us_priceupdated_items[$us_item['ASIN']])){
@@ -690,225 +1015,6 @@ class ProductsController extends AppController {
             //exit;
         }
 
-        $uk_products_data = $this->Product->find('all', array('conditions' => array('status IN'=> array('0','1'), 'source_id'=>'2', 'ebay_id <>' => 'NULL')));
-
-        //$this->pre($uk_products_data);exit;
-
-        if(count($uk_products_data) > 0)
-        {
-            $ukpdIds = array();
-            
-            $uk_out_of_stock_items = array();
-            $uk_priceupdated_items = array();
-
-            foreach ($uk_products_data as $ukpdkey => $ukpdvalue)
-            {    
-                array_push($ukpdIds, $ukpdvalue['Product']['asin_no']);
-            }
-
-            $ukpdIds = array_chunk($ukpdIds, 10);
-
-            foreach ($ukpdIds as $ukpd_slotkey => $ukpd_slot)
-            {
-                $country_cod = 'co.uk';
-                $siteId = Constants\SiteIds::GB;
-
-                $client = new \GuzzleHttp\Client();
-                $request = new \ApaiIO\Request\GuzzleRequest($client);
-
-                $conf = new GenericConfiguration();
-                $conf
-                    ->setCountry($country_cod)
-                    ->setAccessKey(AWS_API_KEY)
-                    ->setSecretKey(AWS_API_SECRET_KEY)
-                    ->setAssociateTag(AWS_ASSOCIATE_TAG)
-                    ->setRequest($request);
-
-                $apaiIo = new ApaiIO($conf);
-
-                //$awnid = $product_asin_no;
-
-                $lookup = new Lookup();
-                $lookup->setResponseGroup(array('Offers')); // More detailed information
-                $lookup->setItemId($ukpd_slot);
-                $lookup->setCondition('New');
-                //$lookup->setMerchantId('Amazon');
-                $response = $apaiIo->runOperation($lookup);
-                $response = json_decode (json_encode (simplexml_load_string ($response)), true);
-
-                //$this->pre($response);
-
-                if(isset($response['Items']['Request']['Errors']['Error']['Message']))
-                {
-                    $response['Items']['Request']['Errors']['Error']['Message'];
-                }
-                else
-                {
-                    if(isset($response['Items']['Item'][0])){
-                        $uk_items = $response['Items']['Item'];
-                        foreach ($uk_items as $uk_items_key => $uk_item)
-                        {
-                            $uk_item_totaloffers = (int) $uk_item['Offers']['TotalOffers'];
-
-                            $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'qty', 'user_id', 'source_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$uk_item['ASIN'])));
-
-                            $curr_ebay_qty = $curr_ebay_price_data['Product']['qty'];
-                            
-                            $this->loadmodel('SourceSettings');
-
-                            $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
-
-
-                            if($uk_item_totaloffers <= 0 && $curr_ebay_qty > 0){
-                                array_push($uk_out_of_stock_items, $uk_item['ASIN']);
-                            } else {
-                                if(isset($uk_item['Offers']['Offer'][0])){
-                                    $uk_offers_arr = $uk_item['Offers']['Offer'];
-                                    foreach ($uk_offers_arr as $uk_offers_arr_key => $uk_offers_arr_value) {
-                                        //$this->pre($uk_offers_arr_value);
-                                        $curr_offer_price = (float) ($uk_offers_arr_value['OfferListing']['Price']['Amount']/100);
-                                        //$this->pre($curr_offer_price);
-
-                                        //$this->pre($curr_ebay_price_data);
-                                        //$this->pre($curr_sourcesettings_data);
-                                        $curr_ebay_price = (float) $curr_ebay_price_data['Product']['ebay_price'];
-                                        $curr_marginpercent = (float) $curr_sourcesettings_data['SourceSettings']['marginpercent'];
-                                        if(!empty($curr_marginpercent)){
-                                            $curr_offer_price_marginadded = (float) round((($curr_offer_price*$curr_marginpercent)/100) + $curr_offer_price, 2);
-                                        } else {
-                                            $curr_offer_price_marginadded = $curr_offer_price;
-                                        }
-                                        //echo $uk_item['ASIN']." => ".$curr_offer_price." => ".$curr_offer_price_marginadded." => ".$curr_ebay_price."<br>";
-
-                                        if($curr_offer_price > $curr_ebay_price){
-                                            if((!empty($uk_priceupdated_items[$uk_item['ASIN']]) && $uk_priceupdated_items[$uk_item['ASIN']] < $curr_offer_price_marginadded) || empty($uk_priceupdated_items[$uk_item['ASIN']])){
-                                                //array_push($uk_priceupdated_items, $uk_item['ASIN']);
-                                                $uk_priceupdated_items[$uk_item['ASIN']] = $curr_offer_price_marginadded;
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    $uk_offers_arr_value = $uk_item['Offers']['Offer'];
-                                    //$this->pre($uk_offers_arr_value);
-                                    $curr_offer_price = (float) ($uk_offers_arr_value['OfferListing']['Price']['Amount']/100);
-
-                                    /*$curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'user_id', 'source_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$uk_item['ASIN'])));
-                                    
-                                    $this->loadmodel('SourceSettings');
-
-                                    $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));*/
-
-                                    //$this->pre($curr_ebay_price_data);
-                                    //$this->pre($curr_sourcesettings_data);
-                                    $curr_ebay_price = (float) $curr_ebay_price_data['Product']['ebay_price'];
-                                    $curr_marginpercent = (float) $curr_sourcesettings_data['SourceSettings']['marginpercent'];
-                                    if(!empty($curr_marginpercent)){
-                                        $curr_offer_price_marginadded = (float) round((($curr_offer_price*$curr_marginpercent)/100) + $curr_offer_price, 2);
-                                    } else {
-                                        $curr_offer_price_marginadded = $curr_offer_price;
-                                    }
-                                    //echo $uk_item['ASIN']." => ".$curr_offer_price." => ".$curr_offer_price_marginadded." => ".$curr_ebay_price."<br>";
-
-                                    if($curr_offer_price > $curr_ebay_price){
-                                        if((!empty($uk_priceupdated_items[$uk_item['ASIN']]) && $uk_priceupdated_items[$uk_item['ASIN']] < $curr_offer_price_marginadded) || empty($uk_priceupdated_items[$uk_item['ASIN']])){
-                                            //array_push($uk_priceupdated_items, $uk_item['ASIN']);
-                                            $uk_priceupdated_items[$uk_item['ASIN']] = $curr_offer_price_marginadded;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        $uk_item = $response['Items']['Item'];
-                        $uk_item_totaloffers = (int) $uk_item['Offers']['TotalOffers'];
-
-                        $curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'user_id', 'source_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$uk_item['ASIN'])));
-                                    
-                        $this->loadmodel('SourceSettings');
-
-                        $curr_ebay_qty = $curr_ebay_price_data['Product']['qty'];
-
-                        $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
-
-                        if($uk_item_totaloffers <= 0 && $curr_ebay_qty > 0){
-                            array_push($uk_out_of_stock_items, $uk_item['ASIN']);
-                        } else {
-                            if(isset($uk_item['Offers']['Offer'][0])){
-                                $uk_offers_arr = $uk_item['Offers']['Offer'];
-                                foreach ($uk_offers_arr as $uk_offers_arr_key => $uk_offers_arr_value) {
-                                    //$this->pre($uk_offers_arr_value);
-                                    $curr_offer_price = (float) ($uk_offers_arr_value['OfferListing']['Price']['Amount']/100);
-
-                                    //$this->pre($curr_ebay_price_data);
-                                    //$this->pre($curr_sourcesettings_data);
-                                    $curr_ebay_price = (float) $curr_ebay_price_data['Product']['ebay_price'];
-                                    $curr_marginpercent = (float) $curr_sourcesettings_data['SourceSettings']['marginpercent'];
-                                    if(!empty($curr_marginpercent)){
-                                        $curr_offer_price_marginadded = (float) round((($curr_offer_price*$curr_marginpercent)/100) + $curr_offer_price, 2);
-                                    } else {
-                                        $curr_offer_price_marginadded = $curr_offer_price;
-                                    }
-                                    //echo $uk_item['ASIN']." => ".$curr_offer_price." => ".$curr_offer_price_marginadded." => ".$curr_ebay_price."<br>";
-
-                                    if($curr_offer_price > $curr_ebay_price){
-                                        if((!empty($uk_priceupdated_items[$uk_item['ASIN']]) && $uk_priceupdated_items[$uk_item['ASIN']] < $curr_offer_price_marginadded) || empty($uk_priceupdated_items[$uk_item['ASIN']])){
-                                            //array_push($uk_priceupdated_items, $uk_item['ASIN']);
-                                            $uk_priceupdated_items[$uk_item['ASIN']] = $curr_offer_price_marginadded;
-                                        }
-                                    }
-                                }
-                            } else {
-                                $uk_offers_arr_value = $uk_item['Offers']['Offer'];
-                                //$this->pre($uk_offers_arr_value);
-                                $curr_offer_price = (float) ($uk_offers_arr_value['OfferListing']['Price']['Amount']/100);
-                                
-                                /*$curr_ebay_price_data = $this->Product->find('first', array('fields'=>array('ebay_price', 'user_id', 'source_id'),'conditions' => array('status IN'=> array('0','1'), 'asin_no'=>$uk_item['ASIN'])));
-                                    
-                                $this->loadmodel('SourceSettings');
-
-                                $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));*/
-
-                                //$this->pre($curr_ebay_price_data);
-                                //$this->pre($curr_sourcesettings_data);
-                                $curr_ebay_price = (float) $curr_ebay_price_data['Product']['ebay_price'];
-                                $curr_marginpercent = (float) $curr_sourcesettings_data['SourceSettings']['marginpercent'];
-                                if(!empty($curr_marginpercent)){
-                                    $curr_offer_price_marginadded = (float) round((($curr_offer_price*$curr_marginpercent)/100) + $curr_offer_price, 2);
-                                } else {
-                                    $curr_offer_price_marginadded = $curr_offer_price;
-                                }
-                                //echo $uk_item['ASIN']." => ".$curr_offer_price." => ".$curr_offer_price_marginadded." => ".$curr_ebay_price."<br>";
-
-                                if($curr_offer_price > $curr_ebay_price){
-                                    if((!empty($uk_priceupdated_items[$uk_item['ASIN']]) && $uk_priceupdated_items[$uk_item['ASIN']] < $curr_offer_price_marginadded) || empty($uk_priceupdated_items[$uk_item['ASIN']])){
-                                        //array_push($uk_priceupdated_items, $uk_item['ASIN']);
-                                        $uk_priceupdated_items[$uk_item['ASIN']] = $curr_offer_price_marginadded;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                //echo "<br>";
-                //echo "________________________________________________________________";   
-                //echo "<br>";
-                
-            }
-
-            echo "Out of stock items (UK)";
-            echo "<br>";
-            $this->pre($uk_out_of_stock_items);
-            echo "________________________________________________________________";   
-            echo "<br>";
-            echo "Price updated items (UK)";
-            echo "<br>";
-            $this->pre($uk_priceupdated_items);
-            echo "________________________________________________________________";   
-            echo "<br>";
-        }
 
         //exit;
 
