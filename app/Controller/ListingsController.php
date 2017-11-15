@@ -221,15 +221,19 @@ class ListingsController extends AppController {
                 $check_content = $this->check_url($singleawn);
 
                 if($check_content==1)
-
                 {
-
+                    //var_dump($singleawn);exit;
+                    //var_dump($this->get_asin($singleawn));exit;
                     $awnid[] = trim($this->get_asin($singleawn)); // [[CUSTOM]] // to get correct ASIN number for amazon product
+
+                    //var_dump($awnid);exit;
 
                 } else {
                     $awnid[] = trim($singleawn);
                 }
             }
+
+            //$this->pre($awnid);exit;
 
             $awnid = implode(",", $awnid);
 
@@ -241,11 +245,11 @@ class ListingsController extends AppController {
 
         {
 
-//            $this->pre($this->data);
+            //$this->pre($this->data);
 
-//            echo $awnid;
+            //echo $awnid;
 
-//            exit;
+            //exit;
 
 
 
@@ -395,7 +399,7 @@ class ListingsController extends AppController {
 
 
 
-        $product_data = $this->Product->find('first', array('conditions' => array('user_id'=>$userid,'asin_no'=>$asin_no)));
+        $product_data = $this->Product->find('first', array('conditions' => array('user_id'=>$userid,'asin_no'=>$asin_no,'status IN'=>array('0','1'))));
 
         $this->set('product_data',$product_data);
 
@@ -907,7 +911,7 @@ class ListingsController extends AppController {
             $mens_bottom_size_categories = array('57989');
             $womens_bottom_size_categories = array('11554');
             $mens_us_shoe_size_categories = array('24087');
-            $variation_type_categories = array('20696','45002','61312');
+            $variation_type_categories = array('20696','45002','61312', '48091', '48619');
 
             //Item Variations (if available)
             if(!empty($variations_dimentions) && $withVariations)
@@ -1010,10 +1014,10 @@ class ListingsController extends AppController {
                 if(!empty($variations_images))
                 {
                     $pictures = new Types\PicturesType();
-                    //$this->pre($variations_images);
                     foreach ($variations_images as $variations_images_key => $variations_images_value)
                     {
                         if($variations_images_key == "Size" && (in_array($primaryCategory, $size_mens_categories) || in_array($primaryCategory, $mens_bottom_size_categories) || in_array($primaryCategory, $womens_bottom_size_categories) || in_array($primaryCategory, $mens_us_shoe_size_categories)) ){
+                            echo "<br>will continue<br>";
                             continue;
                         }
 
@@ -1024,6 +1028,10 @@ class ListingsController extends AppController {
                         if($variations_images_key == "Style" && in_array($primaryCategory, $variation_type_categories)){
                             $variations_images_key = "Type";
                         }
+
+                        //$this->pre($variations_images_key);
+                        //$this->pre($variations_images_value);
+                        
                         $pictures->VariationSpecificName = $variations_images_key;
                         foreach ($variations_images_value as $variations_attrimages_key => $variations_attrimages_value)
                         {

@@ -714,11 +714,15 @@ class AppController extends Controller {
 
     function get_asin($amazon_url){
         
-        $reg = '~(?:www\.)?ama?zo?n\.(?:com|ca|co\.uk|co\.jp|de|fr)/(?:exec/obidos/ASIN/|o/|gp/product/|(?:(?:[^"\'/]*)/)?dp/|)([A-Z0-9]{10})(?:(?:/|\?|\#)(?:[^"\'\s]*))?~isx';
+        //$reg = '~(?:www\.)?ama?zo?n\.(?:com|ca|co\.uk|co\.jp|de|fr)/(?:exec/obidos/ASIN/|o/|gp/product/|(?:(?:[^"\'/]*)/)?dp/|)([A-Z0-9]{10})(?:(?:/|\?|\#)(?:[^"\'\s]*))?~isx';
+
+        $reg = '~(?:www\.)?ama?zo?n\.(?:com|ca|co\.uk|co\.jp|de|fr)/(?:exec/obidos/ASIN/|o/|gp/product/|gp/offer-listing/|(?:(?:[^"\'/]*)/)?dp/|)([A-Z0-9]{10})(?:(?:/|\?|\#)(?:[^"\'\s]*))?~isx';
         
         $matches = array();
         
         preg_match($reg, $amazon_url, $matches);
+
+        //var_dump($matches);exit;
 
         if(!empty($matches[1]))
         {
