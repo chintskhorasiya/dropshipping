@@ -297,6 +297,7 @@ if(!empty($response))
                     $urlbef = $responseItem['Offers']['MoreOffersUrl'];
                 }
                 $MoreOffersUrl = $urlbef.'&f_new=true&f_primeEligible=true';
+                //echo $MoreOffersUrl;exit;
                 $ch = curl_init();
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -304,8 +305,11 @@ if(!empty($response))
                 $result=curl_exec($ch);
                 //echo $result;exit;
                 curl_close($ch);
+                
+
+                libxml_use_internal_errors(true);
                 $doc = new DomDocument;
-                $doc->validateOnParse = true;
+                //$doc->validateOnParse = true;
                 $doc->loadHTML($result);
                 //$doc->saveHTML();
 
@@ -315,6 +319,7 @@ if(!empty($response))
                 //var_dump($elements);exit;
                 if (!is_null($elements)) {
                   $curlGotPrice = false;
+                  $gotPrime = false;
                   foreach ($elements as $element) {
                     //echo "First Child ### <br/>[". $element->nodeName. "]<br/>";
                     $elem = $element->getAttribute('class');
@@ -326,16 +331,17 @@ if(!empty($response))
                         //echo $node->nodeValue. "<br>";
                         //echo "Second Child ###### <br/>[". $node->nodeName. "]<br/>";
                         $childNodes = $node->childNodes;
-                        //echo count($childNodes);echo "<br>";
+                        //echo count($childNodes);echo "<br>";exit;
                         foreach ($childNodes as $child) {
                             if($child->hasAttributes()){
                                $childElemClasses = $child->getAttribute('class');
-                               //echo $childElemClasses;
+                               //echo "<br>".$childElemClasses."<br>";
                                if(strpos($childElemClasses, 'olpOfferPrice'))
                                {
                                     $curlGotPrice = substr(trim(strip_tags($child->nodeValue)), 2);
                                     $curlGotPrice = ((float) $curlGotPrice) * 100;
                                     $gotOffer = true;
+                                    //var_dump($curlGotPrice);
                                }
                                elseif(strpos($childElemClasses, 'olpFastTrack'))
                                {
@@ -343,24 +349,57 @@ if(!empty($response))
                                   if(strpos($child->nodeValue, 'In stock') === FALSE){
                                     $curlGotPrice = false;
                                     $gotOffer = false;
+                                    //var_dump($gotOffer);
                                   }
                                }
+                               elseif(strpos($childElemClasses, 'supersaver') !== FALSE)
+                               {
+                                  //echo "<br>here gotPrime true<br>";
+                                  $gotPrime = true;
+                               }
+
+                               /*if($gotOffer && $curlGotPrice){
+                                    echo '<br>it will continue1<br>';
+                                    break;
+                               }*/
                             }
                             //echo '<pre>';print_r($child->attributes);echo '</pre>';
                             //echo "Third Child ######### <br>";
                             //echo $child->nodeValue. "<br>";
                         }
+
+                        if($gotOffer && $curlGotPrice && $gotPrime){
+                            //echo '<br>it will continue2<br>';
+                            break;
+                        }
                     }
+
+                    if($gotOffer && $curlGotPrice && $gotPrime){
+                        //echo '<br>it will continue3<br>';
+                        break;
+                    }
+
                   }
 
-                  if(!$curlGotPrice && !$gotOffer){
-                    $failed_product_array[] = $responseItem['ASIN'];
-                    continue;
-                  } else {
+                  //var_dump($curlGotPrice);
+                  //var_dump($gotOffer);
+                  //var_dump($gotPrime);
+                  //exit;
+
+                  if($curlGotPrice && $gotOffer && $gotPrime){
+                    
                     //var_dump($curlGotPrice);exit;
                     $price = $curlGotPrice;  //[[CUSTOM]] GET PRICE FROM CURL CALL IF NOT GET FROM AMAZON SELLER
+                    //var_dump($price);exit;
                     $add_product_array[$responseNum]['qty'] = $def_qty;
+
+                  } else {
+                    
+                    $failed_product_array[] = $responseItem['ASIN'];
+                    continue;
+                  
                   }
+
                 }
                 else
                 {
