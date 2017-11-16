@@ -454,25 +454,26 @@ class ProductsController extends AppController {
         // first entry for cron
         
         $this->loadmodel('ReviseItems');
-        $limit = 10;
+        $uklimit = 20;
         $last_revise_page_data = $this->ReviseItems->find('first', array('conditions' => array('status'=> '1'), 'order' => array('id' => 'DESC')));
         
 
         $total_uk_products_data = $this->Product->find('count', array('conditions' => array('status IN'=> array('0','1'), 'source_id'=>'2', 'ebay_id <>' => 'NULL')));
         $last_uk_page = (int) $last_revise_page_data['ReviseItems']['last_uk_page_id'];
         $next_uk_page = $last_uk_page + 1;
-        $lastukcount = $next_uk_page * $limit;
-        if(($lastukcount - $limit) > $total_uk_products_data){
+        $lastukcount = $next_uk_page * $uklimit;
+        if(($lastukcount - $uklimit) > $total_uk_products_data){
             $next_uk_page = 1;
         }
-        $uk_products_data = $this->Product->find('all', array('conditions' => array('status IN'=> array('0','1'), 'source_id'=>'2', 'ebay_id <>' => 'NULL'), 'limit' => $limit, 'page' => $next_uk_page ));
+        $uk_products_data = $this->Product->find('all', array('conditions' => array('status IN'=> array('0','1'), 'source_id'=>'2', 'ebay_id <>' => 'NULL'), 'limit' => $uklimit, 'page' => $next_uk_page ));
         
 
+        $uslimit = 10;
         $total_us_products_data = $this->Product->find('count', array('conditions' => array('status IN'=> array('0','1'), 'source_id'=>'1', 'ebay_id <>' => 'NULL')));
         $last_us_page = (int) $last_revise_page_data['ReviseItems']['last_us_page_id'];
         $next_us_page = $last_us_page + 1;
-        $lastuscount = $next_us_page * $limit;
-        if(($lastuscount - $limit) > $total_us_products_data){
+        $lastuscount = $next_us_page * $uslimit;
+        if(($lastuscount - $uslimit) > $total_us_products_data){
             $next_us_page = 1;
         }
 
@@ -754,7 +755,7 @@ class ProductsController extends AppController {
         }
 
 
-        $us_products_data = $this->Product->find('all', array('conditions' => array('status IN'=> array('0','1'), 'source_id'=>'1', 'ebay_id <>' => 'NULL'), 'limit' => $limit, 'page' => $next_us_page ));
+        $us_products_data = $this->Product->find('all', array('conditions' => array('status IN'=> array('0','1'), 'source_id'=>'1', 'ebay_id <>' => 'NULL'), 'limit' => $uslimit, 'page' => $next_us_page ));
 
         //$this->pre($us_products_data);exit;
 
