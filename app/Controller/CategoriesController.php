@@ -238,4 +238,60 @@ class CategoriesController extends AppController {
 
     }
 
+    function list_ebay_categories($siteID = 3, $categoryId = -1){
+        var_dump($categoryId);
+        $browse = '';
+        $endpoint = 'http://open.api.ebay.com/Shopping';  // URL to call
+        $ebay_app_id = EBAY_LIVE_APPID;
+        
+        $responseEncoding = 'XML';   // Format of the response
+
+        // Construct the FindItems call
+        $apicall = "$endpoint?callname=GetCategoryInfo"
+             . "&appid=".$ebay_app_id
+             . "&siteid=$siteID"
+             . "&CategoryID=".$categoryId
+             . "&version=677"
+             . "&IncludeSelector=ChildCategories";
+
+        // Load the call and capture the document returned by the GetCategoryInfo API
+        $xml = simplexml_load_file($apicall);
+
+        $errors = $xml->Errors;
+
+        //if there are error nodes
+        if($errors->count() > 0)
+        {
+            echo '<p><b>eBay returned the following error(s):</b></p>';
+            //display each error
+            //Get error code, ShortMesaage and LongMessage
+            $code = $errors->ErrorCode;
+            $shortMsg = $errors->ShortMessage;
+            $longMsg = $errors->LongMessage;
+            //Display code and shortmessage
+            echo '<p>', $code, ' : ', str_replace(">", "&gt;", str_replace("<", "&lt;", $shortMsg));
+            //if there is a long message (ie ErrorLevel=1), display it
+            if(count($longMsg) > 0)
+                echo '<br>', str_replace(">", "&gt;", str_replace("<", "&lt;", $longMsg));
+
+        }
+        else //no errors
+        {
+            echo '<pre>';print_r($xml);echo '</pre>';
+            foreach($xml->CategoryArray->Category as $cat){
+                echo '<ul>';
+                if($cat->CategoryLevel!=0):
+                    echo '<li>'.$cat->CategoryID.' >> '.$cat->CategoryName.' >> '.$cat->LeafCategory.'</li>';
+                    if($cat->LeafCategory === FALSE){
+                        $this->list_ebay_categories($siteID, $cat->CategoryID);
+                    }
+                endif;
+                echo '</ul>';
+            }
+
+        }
+
+        exit;
+    }
+
 }
