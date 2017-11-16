@@ -911,7 +911,7 @@ class ListingsController extends AppController {
             $mens_bottom_size_categories = array('57989');
             $womens_bottom_size_categories = array('11554');
             $mens_us_shoe_size_categories = array('24087');
-            $variation_type_categories = array('20696','45002','61312', '48091', '48619');
+            $variation_type_categories = array('20696','45002','61312', '48091', '48619', '71302');
 
             //Item Variations (if available)
             if(!empty($variations_dimentions) && $withVariations)
@@ -1013,9 +1013,9 @@ class ListingsController extends AppController {
 
                 if(!empty($variations_images))
                 {
-                    $pictures = new Types\PicturesType();
                     foreach ($variations_images as $variations_images_key => $variations_images_value)
                     {
+                        $pictures = new Types\PicturesType();
                         if($variations_images_key == "Size" && (in_array($primaryCategory, $size_mens_categories) || in_array($primaryCategory, $mens_bottom_size_categories) || in_array($primaryCategory, $womens_bottom_size_categories) || in_array($primaryCategory, $mens_us_shoe_size_categories)) ){
                             echo "<br>will continue<br>";
                             continue;
@@ -1044,8 +1044,8 @@ class ListingsController extends AppController {
                             }
                             $pictures->VariationSpecificPictureSet[] = $pictureSet;
                         }
+                        $item->Variations->Pictures[] = $pictures;
                     }
-                    $item->Variations->Pictures[] = $pictures;
                 }
 
                 //$this->pre($item);exit;
