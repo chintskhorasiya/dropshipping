@@ -208,13 +208,14 @@ if(!empty($response))
                     $itemAvailability = $offerData['OfferListing']['Availability'];
                     $itemAvailabilityAttributes = $offerData['OfferListing']['AvailabilityAttributes'];
                     $itemAvailabilityMinHours = (int) $itemAvailabilityAttributes['MinimumHours'];
+                    $itemAvailabilityType = $itemAvailabilityAttributes['AvailabilityType'];
                     //var_dump($itemAvailability);
                     //var_dump(strpos($itemAvailability, 'Usually dispatched'));
                     //var_dump(strpos($itemAvailability, 'Temporary out of stock'));
                     /*if (strpos($itemAvailability, 'Usually dispatched') === FALSE && strpos($itemAvailability, 'Temporary out of stock') === FALSE) {
                        $itemavailable = true;
                     }*/
-                    if($itemAvailabilityMinHours < 96){
+                    if($itemAvailabilityMinHours < 96 && $itemAvailabilityType != "futureDate"){
                         $itemavailable = true;                        
                     }
                     //var_dump($itemavailable);
@@ -238,13 +239,14 @@ if(!empty($response))
                 $itemAvailability = $responseItem['Offers']['Offer']['OfferListing']['Availability'];
                 $itemAvailabilityAttributes = $responseItem['Offers']['Offer']['OfferListing']['AvailabilityAttributes'];
                 $itemAvailabilityMinHours = (int) $itemAvailabilityAttributes['MinimumHours'];
+                $itemAvailabilityType = $itemAvailabilityAttributes['AvailabilityType'];
                 //var_dump($itemAvailability);
                 //var_dump(strpos($itemAvailability, 'Usually dispatched'));
                 //var_dump(strpos($itemAvailability, 'Temporary out of stock'));
                 /*if (strpos($itemAvailability, 'Usually dispatched') === FALSE && strpos($itemAvailability, 'Temporary out of stock') === FALSE) {
                    $itemavailable = true;
                 }*/
-                if($itemAvailabilityMinHours < 96){
+                if($itemAvailabilityMinHours < 96 && $itemAvailabilityType != "futureDate"){
                     $itemavailable = true;
                 }
                 //var_dump($itemavailable);
@@ -281,8 +283,6 @@ if(!empty($response))
                 //}
             }
 
-            //var_dump($gotOffer);exit;
-
             if(!$gotOffer){
                 //var_dump($responseItem['ASIN']);exit;
                 //$MoreOffersUrl = $responseItem['Offers']['MoreOffersUrl'];
@@ -297,8 +297,9 @@ if(!empty($response))
                     $urlbef = $responseItem['Offers']['MoreOffersUrl'];
                 }
                 $MoreOffersUrl = $urlbef.'&f_new=true&f_primeEligible=true';
-                //echo $MoreOffersUrl;exit;
+                //echo $MoreOffersUrl;
                 $ch = curl_init();
+                //var_dump($ch);exit;
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($ch, CURLOPT_URL,$MoreOffersUrl);
@@ -321,6 +322,7 @@ if(!empty($response))
                   $curlGotPrice = false;
                   $gotPrime = false;
                   foreach ($elements as $element) {
+                    //echo '<pre>';print_r($element);echo '</pre>';
                     //echo "First Child ### <br/>[". $element->nodeName. "]<br/>";
                     $elem = $element->getAttribute('class');
                     //var_dump($elem);
@@ -330,9 +332,17 @@ if(!empty($response))
                         //echo '<pre>';print_r($node);echo '</pre>';
                         //echo $node->nodeValue. "<br>";
                         //echo "Second Child ###### <br/>[". $node->nodeName. "]<br/>";
+                        if($node->hasAttributes()){
+                            //echo "<br>yes has attr<br>";
+                            $nodeElemClasses = $node->getAttribute('class');
+                            //echo "<br>".$nodeElemClasses."<br>";
+                        }
+                        //$nodeelem = $node->getAttribute('class');
+                        //var_dump($nodeelem);
                         $childNodes = $node->childNodes;
                         //echo count($childNodes);echo "<br>";exit;
                         foreach ($childNodes as $child) {
+                            //echo "<br>".print_r($child)."<br>";
                             if($child->hasAttributes()){
                                $childElemClasses = $child->getAttribute('class');
                                //echo "<br>".$childElemClasses."<br>";
@@ -368,10 +378,10 @@ if(!empty($response))
                             //echo $child->nodeValue. "<br>";
                         }
 
-                        if($gotOffer && $curlGotPrice && $gotPrime){
+                        //if($gotOffer && $curlGotPrice && $gotPrime){
                             //echo '<br>it will continue2<br>';
-                            break;
-                        }
+                            //break;
+                        //}
                     }
 
                     if($gotOffer && $curlGotPrice && $gotPrime){
@@ -727,7 +737,9 @@ if(!empty($response))
                         $vitemAvailability = $vofferData['OfferListing']['Availability'];
                         $vitemAvailabilityAttributes = $vofferData['OfferListing']['AvailabilityAttributes'];
                         $vitemAvailabilityMinHours = (int) $vitemAvailabilityAttributes['MinimumHours'];
-                        if($vitemAvailabilityMinHours < 96){
+                        $itemAvailabilityType = $itemAvailabilityAttributes['AvailabilityType'];
+
+                        if($vitemAvailabilityMinHours < 96 && $itemAvailabilityType != "futureDate"){
                             $vitemavailable = true;                        
                         }
                         //var_dump($vitemavailable);

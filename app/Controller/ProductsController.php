@@ -640,10 +640,10 @@ class ProductsController extends AppController {
                                                 //echo $child->nodeValue. "<br>";
                                             }
 
-                                            if($gotOffer && $curlGotPrice && $gotPrime){
+                                            /*if($gotOffer && $curlGotPrice && $gotPrime){
                                                 //echo '<br>it will continue2<br>';
                                                 break;
-                                            }
+                                            }*/
                                         }
 
                                         if($gotOffer && $curlGotPrice && $gotPrime){
