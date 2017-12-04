@@ -1,0 +1,99 @@
+2017-11-29 11:15:46 Error: [MissingDatasourceConfigException] The datasource configuration "default" was not found in database.php
+Exception Attributes: array (
+  'config' => 'default',
+)
+Request URL: /dropshipping/
+Stack Trace:
+#0 /var/www/dropshipping/lib/Cake/Model/ConnectionManager.php(91): ConnectionManager::_getConnectionObject('default')
+#1 /var/www/dropshipping/lib/Cake/Model/Model.php(3626): ConnectionManager::getDataSource('default')
+#2 /var/www/dropshipping/lib/Cake/Model/Model.php(1155): Model->setDataSource('default')
+#3 /var/www/dropshipping/lib/Cake/Model/Model.php(3653): Model->setSource('users')
+#4 /var/www/dropshipping/lib/Cake/Model/Model.php(3031): Model->getDataSource()
+#5 /var/www/dropshipping/lib/Cake/Model/Model.php(3003): Model->_readDataSource('first', Array)
+#6 /var/www/dropshipping/app/Controller/UsersController.php(48): Model->find('first', Array)
+#7 [internal function]: UsersController->index()
+#8 /var/www/dropshipping/lib/Cake/Controller/Controller.php(491): ReflectionMethod->invokeArgs(Object(UsersController), Array)
+#9 /var/www/dropshipping/lib/Cake/Routing/Dispatcher.php(193): Controller->invokeAction(Object(CakeRequest))
+#10 /var/www/dropshipping/lib/Cake/Routing/Dispatcher.php(167): Dispatcher->_invoke(Object(UsersController), Object(CakeRequest))
+#11 /var/www/dropshipping/app/webroot/index.php(111): Dispatcher->dispatch(Object(CakeRequest), Object(CakeResponse))
+#12 {main}
+2017-11-29 11:16:13 Error: [MissingDatasourceConfigException] The datasource configuration "default" was not found in database.php
+Exception Attributes: array (
+  'config' => 'default',
+)
+Request URL: /dropshipping/
+Stack Trace:
+#0 /var/www/dropshipping/lib/Cake/Model/ConnectionManager.php(91): ConnectionManager::_getConnectionObject('default')
+#1 /var/www/dropshipping/lib/Cake/Model/Model.php(3626): ConnectionManager::getDataSource('default')
+#2 /var/www/dropshipping/lib/Cake/Model/Model.php(1155): Model->setDataSource('default')
+#3 /var/www/dropshipping/lib/Cake/Model/Model.php(3653): Model->setSource('users')
+#4 /var/www/dropshipping/lib/Cake/Model/Model.php(3031): Model->getDataSource()
+#5 /var/www/dropshipping/lib/Cake/Model/Model.php(3003): Model->_readDataSource('first', Array)
+#6 /var/www/dropshipping/app/Controller/UsersController.php(48): Model->find('first', Array)
+#7 [internal function]: UsersController->index()
+#8 /var/www/dropshipping/lib/Cake/Controller/Controller.php(491): ReflectionMethod->invokeArgs(Object(UsersController), Array)
+#9 /var/www/dropshipping/lib/Cake/Routing/Dispatcher.php(193): Controller->invokeAction(Object(CakeRequest))
+#10 /var/www/dropshipping/lib/Cake/Routing/Dispatcher.php(167): Dispatcher->_invoke(Object(UsersController), Object(CakeRequest))
+#11 /var/www/dropshipping/app/webroot/index.php(111): Dispatcher->dispatch(Object(CakeRequest), Object(CakeResponse))
+#12 {main}
+2017-12-04 17:18:37 Error: [MissingActionException] Action ProductsController::revise_items() could not be found.
+Exception Attributes: array (
+  'controller' => 'ProductsController',
+  'action' => 'revise_items',
+)
+Request URL: /dropshipping/products/revise_items
+Stack Trace:
+#0 /var/www/dropshipping/lib/Cake/Routing/Dispatcher.php(193): Controller->invokeAction(Object(CakeRequest))
+#1 /var/www/dropshipping/lib/Cake/Routing/Dispatcher.php(167): Dispatcher->_invoke(Object(ProductsController), Object(CakeRequest))
+#2 /var/www/dropshipping/app/webroot/index.php(111): Dispatcher->dispatch(Object(CakeRequest), Object(CakeResponse))
+#3 {main}
+2017-12-04 17:18:58 Error: [GuzzleHttp\Exception\ServerException] Server error: `GET http://webservices.amazon.co.uk/onca/xml?AWSAccessKeyId=AKIAJL5OCKUJ5TXWF47Q&AssociateTag=dropshipping7-20&Condition=New&ItemId=B00R9HOIXW%2CB06XXDBWMF%2CB01KQ6V4A2%2CB015UGKX9G%2CB073JPSD87%2CB013UDL58E%2CB00ZIXJT5G%2CB00BMVRNHE%2CB073JWXGNT%2CB000I2Q0F4&MerchantId=Amazon&Operation=ItemLookup&ResponseGroup=Offers&Service=AWSECommerceService&Timestamp=2017-12-04T11%3A48%3A57Z&Version=2013-08-01&Signature=9GV%2Fk9wii9ERidzJka9sBIbYhDvd9uzuE27P%2FfLSmSI%3D` resulted in a `503 Service Unavailable` response:
+<?xml version="1.0"?>
+<ItemLookupErrorResponse xmlns="http://ecs.amazonaws.com/doc/2013-08-01/"><Error><Code>RequestThro (truncated...)
+
+Request URL: /dropshipping/products/reviseitems
+Stack Trace:
+#0 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Middleware.php(65): GuzzleHttp\Exception\RequestException::create(Object(GuzzleHttp\Psr7\Request), Object(GuzzleHttp\Psr7\Response))
+#1 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(203): GuzzleHttp\Middleware::GuzzleHttp\{closure}(Object(GuzzleHttp\Psr7\Response))
+#2 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(156): GuzzleHttp\Promise\Promise::callHandler(1, Object(GuzzleHttp\Psr7\Response), Array)
+#3 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/TaskQueue.php(47): GuzzleHttp\Promise\Promise::GuzzleHttp\Promise\{closure}()
+#4 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(246): GuzzleHttp\Promise\TaskQueue->run(true)
+#5 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(223): GuzzleHttp\Promise\Promise->invokeWaitFn()
+#6 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(267): GuzzleHttp\Promise\Promise->waitIfPending()
+#7 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(225): GuzzleHttp\Promise\Promise->invokeWaitList()
+#8 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(62): GuzzleHttp\Promise\Promise->waitIfPending()
+#9 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Client.php(104): GuzzleHttp\Promise\Promise->wait()
+#10 /var/www/dropshipping/app/webroot/vendor/exeu/apai-io/src/ApaiIO/Request/GuzzleRequest.php(75): GuzzleHttp\Client->send(Object(GuzzleHttp\Psr7\Request))
+#11 /var/www/dropshipping/app/webroot/vendor/exeu/apai-io/src/ApaiIO/ApaiIO.php(64): ApaiIO\Request\GuzzleRequest->perform(Object(ApaiIO\Operations\Lookup), Object(ApaiIO\Configuration\GenericConfiguration))
+#12 /var/www/dropshipping/app/Controller/ProductsController.php(529): ApaiIO\ApaiIO->runOperation(Object(ApaiIO\Operations\Lookup))
+#13 [internal function]: ProductsController->reviseitems()
+#14 /var/www/dropshipping/lib/Cake/Controller/Controller.php(491): ReflectionMethod->invokeArgs(Object(ProductsController), Array)
+#15 /var/www/dropshipping/lib/Cake/Routing/Dispatcher.php(193): Controller->invokeAction(Object(CakeRequest))
+#16 /var/www/dropshipping/lib/Cake/Routing/Dispatcher.php(167): Dispatcher->_invoke(Object(ProductsController), Object(CakeRequest))
+#17 /var/www/dropshipping/app/webroot/index.php(111): Dispatcher->dispatch(Object(CakeRequest), Object(CakeResponse))
+#18 {main}
+2017-12-04 17:35:40 Error: [GuzzleHttp\Exception\RequestException] cURL error 56: Recv failure: Connection timed out (see http://curl.haxx.se/libcurl/c/libcurl-errors.html)
+Request URL: /dropshipping/products/reviseitems
+Stack Trace:
+#0 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php(150): GuzzleHttp\Handler\CurlFactory::createRejection(Object(GuzzleHttp\Handler\EasyHandle), Array)
+#1 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php(103): GuzzleHttp\Handler\CurlFactory::finishError(Object(GuzzleHttp\Handler\CurlHandler), Object(GuzzleHttp\Handler\EasyHandle), Object(GuzzleHttp\Handler\CurlFactory))
+#2 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Handler/CurlHandler.php(43): GuzzleHttp\Handler\CurlFactory::finish(Object(GuzzleHttp\Handler\CurlHandler), Object(GuzzleHttp\Handler\EasyHandle), Object(GuzzleHttp\Handler\CurlFactory))
+#3 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Handler/Proxy.php(28): GuzzleHttp\Handler\CurlHandler->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#4 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Handler/Proxy.php(51): GuzzleHttp\Handler\Proxy::GuzzleHttp\Handler\{closure}(Object(GuzzleHttp\Psr7\Request), Array)
+#5 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/PrepareBodyMiddleware.php(42): GuzzleHttp\Handler\Proxy::GuzzleHttp\Handler\{closure}(Object(GuzzleHttp\Psr7\Request), Array)
+#6 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Middleware.php(30): GuzzleHttp\PrepareBodyMiddleware->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#7 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/RedirectMiddleware.php(68): GuzzleHttp\Middleware::GuzzleHttp\{closure}(Object(GuzzleHttp\Psr7\Request), Array)
+#8 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Middleware.php(59): GuzzleHttp\RedirectMiddleware->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#9 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/HandlerStack.php(67): GuzzleHttp\Middleware::GuzzleHttp\{closure}(Object(GuzzleHttp\Psr7\Request), Array)
+#10 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Client.php(275): GuzzleHttp\HandlerStack->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
+#11 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Client.php(98): GuzzleHttp\Client->transfer(Object(GuzzleHttp\Psr7\Request), Array)
+#12 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Client.php(104): GuzzleHttp\Client->sendAsync(Object(GuzzleHttp\Psr7\Request), Array)
+#13 /var/www/dropshipping/app/webroot/vendor/exeu/apai-io/src/ApaiIO/Request/GuzzleRequest.php(75): GuzzleHttp\Client->send(Object(GuzzleHttp\Psr7\Request))
+#14 /var/www/dropshipping/app/webroot/vendor/exeu/apai-io/src/ApaiIO/ApaiIO.php(64): ApaiIO\Request\GuzzleRequest->perform(Object(ApaiIO\Operations\Lookup), Object(ApaiIO\Configuration\GenericConfiguration))
+#15 /var/www/dropshipping/app/Controller/ProductsController.php(529): ApaiIO\ApaiIO->runOperation(Object(ApaiIO\Operations\Lookup))
+#16 [internal function]: ProductsController->reviseitems()
+#17 /var/www/dropshipping/lib/Cake/Controller/Controller.php(491): ReflectionMethod->invokeArgs(Object(ProductsController), Array)
+#18 /var/www/dropshipping/lib/Cake/Routing/Dispatcher.php(193): Controller->invokeAction(Object(CakeRequest))
+#19 /var/www/dropshipping/lib/Cake/Routing/Dispatcher.php(167): Dispatcher->_invoke(Object(ProductsController), Object(CakeRequest))
+#20 /var/www/dropshipping/app/webroot/index.php(111): Dispatcher->dispatch(Object(CakeRequest), Object(CakeResponse))
+#21 {main}

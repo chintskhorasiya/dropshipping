@@ -2410,4 +2410,53 @@ class ListingsController extends AppController {
 
     }
 
+    public function search_listings()
+    {
+        $userid = $this->Session->read(md5(SITE_TITLE) . 'USERID');
+
+        if ($this->request->is('post'))
+        {
+            if(!empty($this->request->data) && isset($this->request->data) )
+            {
+                $search_key = trim($this->request->data['listingSearch']['searchtitle']);
+     
+                $conditions[] = array(
+                    "OR" => array(
+                        "Product.title LIKE" => "%".$search_key."%",
+                        "Product.asin_no LIKE" => "%".$search_key."%"
+                    )
+                );
+
+                $this->Session->write('searchCond', $conditions);
+                $this->Session->write('search_key', $search_key);
+            }
+        }
+
+        $mainConditions = array('user_id'=>$userid, 'status IN'=> array(0,1));
+
+        if ($this->Session->check('searchCond')) {
+            $conditions = $this->Session->read('searchCond');
+            $allConditions = array_merge($mainConditions, $conditions);
+        } else {
+            $conditions = null;
+            $allConditions = array_merge($mainConditions, $conditions);
+        }
+
+        $this->paginate = array(
+            'conditions' => $allConditions,
+            'limit' => 50,
+            'order' => array('id' => 'desc')
+        );
+
+        $product_data = $this->paginate('Product');
+
+        //$this->pre($product_data);exit;
+
+        $this->set('product_data',$product_data);
+
+        $this->set('from_search',true);
+
+        $this->render('/Listings/listing_requests');
+    }
+
 }

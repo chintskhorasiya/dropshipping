@@ -40,12 +40,32 @@
                         </div>
                         <?php
                     }
+
+                    if($this->Session->read('search_key') != "" && $from_search)
+                    {
+                       $search_key = $this->Session->read('search_key');
+                    }
+                    else
+                    {
+                       $search_key = "";
+                    }
                     ?>
                     <section class="panel">
                         <div class="panel-body">
                             <h4>Recent listing requests</h4>
                             <p>Listing requests usually take less than 45 minutes.</p>
                             <div class="adv-table">
+                                <?php
+                                
+                                echo $this->Form->create('listingSearch', array('url' => array('controller' => 'listings', 'action' => 'search_listings')));
+                                echo '<div class="search-bar">';
+                                echo $this->Form->input('searchtitle', array('label'=>'Search by ASIN or Title','class' => 'form-control input-lg', 'value'=>$search_key));
+                                echo $this->Form->submit('Search');
+                                echo '</div>';
+                                echo $this->Form->end();
+
+                                echo $this->Form->create('newsList',array('url' => array('controller' => 'news', 'action' => 'delete_selected')));
+                                ?>
                                 <?php
                                 echo $this->Form->create('listingRequests',array('url' => array('controller' => 'listings/listing_delete_requests', 'action' => 'index')));
                                 ?>
