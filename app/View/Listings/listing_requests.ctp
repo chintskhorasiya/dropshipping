@@ -64,7 +64,8 @@
                                 echo '</div>';
                                 echo $this->Form->end();
 
-                                echo $this->Form->create('newsList',array('url' => array('controller' => 'news', 'action' => 'delete_selected')));
+                                if(isset($product_data) && count($product_data)>0)
+                                {
                                 ?>
                                 <?php
                                 echo $this->Form->create('listingRequests',array('url' => array('controller' => 'listings/listing_delete_requests', 'action' => 'index')));
@@ -201,7 +202,14 @@
                             <?php echo $this->Paginator->next('Next »', array('class' => 'btn btn-default'), null,
                                 array('class' => 'disabled')); ?> 
                             <!-- prints X of Y, where X is current page and Y is number of pages -->
-                            <?php echo $this->Paginator->counter(); ?> 
+                            <?php echo $this->Paginator->counter(); ?>
+                            <?php
+                            }
+                            else
+                            {
+                                echo "<h3>No searched record found.</h3>";
+                            }
+                            ?> 
                         </div>
                     </section>
                 </div>

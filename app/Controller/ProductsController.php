@@ -922,14 +922,92 @@ class ProductsController extends AppController {
 
                         $curr_ebay_qty = $curr_ebay_price_data['Product']['qty'];
 
+                        // got offer code
+
+                        $gotOffer = false;
+
+                        if(isset($us_item['Offers']['Offer']) && isset($us_item['Offers']['Offer'][0]))
+                        {
+                            foreach ($us_item['Offers']['Offer'] as $offerNum => $offerData)
+                            {
+                                $itemavailable = false;
+                                $itemAvailability = $offerData['OfferListing']['Availability'];
+                                $itemAvailabilityAttributes = $offerData['OfferListing']['AvailabilityAttributes'];
+                                $itemAvailabilityMinHours = (int) $itemAvailabilityAttributes['MinimumHours'];
+                                $itemAvailabilityType = $itemAvailabilityAttributes['AvailabilityType'];
+                                //var_dump($itemAvailability);
+                                //var_dump(strpos($itemAvailability, 'Usually dispatched'));
+                                //var_dump(strpos($itemAvailability, 'Temporary out of stock'));
+                                /*if (strpos($itemAvailability, 'Usually dispatched') === FALSE && strpos($itemAvailability, 'Temporary out of stock') === FALSE) {
+                                   $itemavailable = true;
+                                }*/
+                                if($itemAvailabilityMinHours < 96 && $itemAvailabilityType != "futureDate"){
+                                    $itemavailable = true;                        
+                                }
+                                //var_dump($itemavailable);
+                                //exit;
+                                //pre($offerData);
+                                if($offerData['OfferListing']['IsEligibleForPrime'] == "1" && $itemavailable)
+                                {
+                                    $price = (isset($offerData['OfferListing']['Price']['Amount']))?$offerData['OfferListing']['Price']['Amount']:'';
+                                    //var_dump($price);
+                                    $amount_save = (isset($offerData['OfferListing']['AmountSaved']['Amount']))?$offerData['OfferListing']['AmountSaved']['Amount']:'';
+                                    $sale_price = (isset($offerData['OfferListing']['SalePrice']['Amount']))?$offerData['OfferListing']['SalePrice']['Amount']:'';
+                                    $percentage_save = (isset($offerData['OfferListing']['PercentageSaved']))?$offerData['OfferListing']['PercentageSaved']:'';
+                                    $gotOffer = true;
+                                    break;
+                                }  
+                            }
+                        }
+                        else
+                        {
+                            $itemavailable = false;
+                            $itemAvailability = $us_item['Offers']['Offer']['OfferListing']['Availability'];
+                            $itemAvailabilityAttributes = $us_item['Offers']['Offer']['OfferListing']['AvailabilityAttributes'];
+                            $itemAvailabilityMinHours = (int) $itemAvailabilityAttributes['MinimumHours'];
+                            $itemAvailabilityType = $itemAvailabilityAttributes['AvailabilityType'];
+                            //var_dump($itemAvailability);
+                            //var_dump(strpos($itemAvailability, 'Usually dispatched'));
+                            //var_dump(strpos($itemAvailability, 'Temporary out of stock'));
+                            /*if (strpos($itemAvailability, 'Usually dispatched') === FALSE && strpos($itemAvailability, 'Temporary out of stock') === FALSE) {
+                               $itemavailable = true;
+                            }*/
+                            if($itemAvailabilityMinHours < 96 && $itemAvailabilityType != "futureDate"){
+                                $itemavailable = true;
+                            }
+                            //var_dump($itemavailable);
+                            //exit;
+
+                            if($us_item['Offers']['Offer']['OfferListing']['IsEligibleForPrime'] == "1" && $itemavailable)
+                            {
+                                $price = (isset($us_item['Offers']['Offer']['OfferListing']['Price']['Amount']))?$us_item['Offers']['Offer']['OfferListing']['Price']['Amount']:'';
+                                //var_dump($price);
+                                $amount_save = (isset($us_item['Offers']['Offer']['OfferListing']['AmountSaved']['Amount']))?$us_item['Offers']['Offer']['OfferListing']['AmountSaved']['Amount']:'';
+                                $sale_price = (isset($us_item['Offers']['Offer']['OfferListing']['SalePrice']['Amount']))?$us_item['Offers']['Offer']['OfferListing']['SalePrice']['Amount']:'';
+                                $percentage_save = (isset($us_item['Offers']['Offer']['OfferListing']['PercentageSaved']))?$us_item['Offers']['Offer']['OfferListing']['PercentageSaved']:'';
+                                $gotOffer = true;
+                            }
+
+                            $get_product_attribute = $us_item['ItemAttributes'];
+                            $offer_summary = $us_item['OfferSummary'];
+
+                            // for QTY [[CUSTOM]]
+                        
+                            $totalOffers = (int) $us_item['Offers']['TotalOffers'];
+                        }
+
+                        echo "<br>";var_dump($gotOffer);echo "<br>";
+
+                        // got offer code
+
                         $this->loadmodel('SourceSettings');
 
                         $curr_sourcesettings_data = $this->SourceSettings->find('first', array('fields'=>array('marginpercent',),'conditions' => array('source_id'=> $curr_ebay_price_data['Product']['source_id'], 'user_id'=>$curr_ebay_price_data['Product']['user_id'])));
 
 
-                        if($us_item_totaloffers <= 0 && $curr_ebay_qty > 0){
+                        if(!$gotOffer && $curr_ebay_qty > 0){ //if($us_item_totaloffers <= 0 && $curr_ebay_qty > 0){ // before got offer code
 
-                            /*if(!empty($us_item['Offers']['MoreOffersUrl']) || $us_item['Offers']['MoreOffersUrl'] == "0"){
+                            if(!empty($us_item['Offers']['MoreOffersUrl']) || $us_item['Offers']['MoreOffersUrl'] == "0"){
                                 $urlbef = "https://www.amazon.com/gp/offer-listing/".$us_item['ASIN']."?";
                             } else {
                                 $urlbef = $responseItem['Offers']['MoreOffersUrl'];
@@ -1000,10 +1078,10 @@ class ProductsController extends AppController {
                                         //echo $child->nodeValue. "<br>";
                                     }
 
-                                    if($gotOffer && $curlGotPrice && $gotPrime){
+                                    /*if($gotOffer && $curlGotPrice && $gotPrime){
                                         //echo '<br>it will continue2<br>';
                                         break;
-                                    }
+                                    }*/
                                 }
 
                                 if($gotOffer && $curlGotPrice && $gotPrime){
@@ -1048,7 +1126,7 @@ class ProductsController extends AppController {
                             else
                             {
                                 array_push($us_out_of_stock_items, $us_item['ASIN']);
-                            }*/
+                            }
 
                             array_push($us_out_of_stock_items, $us_item['ASIN']);
 
