@@ -61,6 +61,7 @@
                         <ul class="sub">
                             <li><a href="<?php echo DEFAULT_URL ?>ebay/ebay_settings/type:us/<?php echo $encrypt_id;?>"><i class="fa fa-eye"></i>Ebay US</a></li>
                             <li><a href="<?php echo DEFAULT_URL ?>ebay/ebay_settings/type:uk/<?php echo $encrypt_id;?>"><i class="fa fa-eye"></i>Ebay UK</a></li>
+                            <li><a href="<?php echo DEFAULT_URL ?>ebay/ebay_user_token/<?php echo $encrypt_id;?>"><i class="fa fa-eye"></i>User Token</a></li>
                         </ul>
                     </li>
                     <?php /* */ ?>

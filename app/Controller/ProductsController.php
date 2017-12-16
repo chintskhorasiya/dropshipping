@@ -1500,5 +1500,136 @@ class ProductsController extends AppController {
         
         }
     }
+
+    public function revisevariations()
+    {
+        //$this->loadmodel('ReviseVariations');
+        $uklimit = 10;
+        //$last_revise_variation_data = $this->ReviseVariations->find('first', array('conditions' => array('status'=> '1'), 'order' => array('id' => 'DESC')));
+
+        //$last_uk_page = (int) $last_revise_variation_data['ReviseItems']['last_uk_page_id'];
+        //$next_uk_page = $last_uk_page + 1;
+        //$lastukcount = $next_uk_page * $uklimit;
+        //if(($lastukcount - $uklimit) > $total_uk_products_data){
+        //    $next_uk_page = 1;
+        //}
+
+        $next_uk_page = 1;
+        
+
+        $total_uk_products_data = $this->Product->find('count', array('conditions' => array('status IN'=> array('0','1'), 'source_id'=>'2', 'ebay_id <>' => 'NULL', 'with_variations' => 1)));
+        
+
+        $uk_products_data = $this->Product->find('all', array('conditions' => array('status IN'=> array('0','1'), 'source_id'=>'2', 'ebay_id <>' => 'NULL', 'with_variations' => 1), 'limit' => $uklimit, 'page' => $next_uk_page ));
+
+        //$this->pre($uk_products_data);exit;
+
+        if(count($uk_products_data) > 0)
+        {
+            $ukpdIds = array();
+            
+            $uk_out_of_stock_items = array();
+            $uk_priceupdated_items = array();
+
+            foreach ($uk_products_data as $ukpdkey => $ukpdvalue)
+            {    
+                array_push($ukpdIds, $ukpdvalue['Product']['asin_no']);
+            }
+
+            $ukpdIds = array_chunk($ukpdIds, 10);
+
+            foreach ($ukpdIds as $ukpd_slotkey => $ukpd_slot)
+            {
+
+                $country_cod = 'co.uk';
+                $siteId = Constants\SiteIds::GB;
+
+                $client = new \GuzzleHttp\Client();
+                $request = new \ApaiIO\Request\GuzzleRequest($client);
+
+                $conf = new GenericConfiguration();
+                $conf
+                    ->setCountry($country_cod)
+                    ->setAccessKey(AWS_API_KEY)
+                    ->setSecretKey(AWS_API_SECRET_KEY)
+                    ->setAssociateTag(AWS_ASSOCIATE_TAG)
+                    ->setRequest($request);
+
+                $apaiIo = new ApaiIO($conf);
+
+                //$awnid = $product_asin_no;
+
+                $lookup = new Lookup();
+                $lookup->setResponseGroup(array('Offers')); // More detailed information
+                $lookup->setItemId($ukpd_slot);
+                $lookup->setCondition('New');
+                $lookup->setMerchantId('Amazon');
+                $response = $apaiIo->runOperation($lookup);
+                $response = json_decode (json_encode (simplexml_load_string ($response)), true);
+
+                //$this->pre($response);exit;
+
+                if(isset($response['Items']['Request']['Errors']['Error']['Message']))
+                {
+                    $response['Items']['Request']['Errors']['Error']['Message'];
+                }
+                else
+                {
+                    if(!isset($response['Items']['Item'][0])){
+                        $tempFirstItem = $response['Items']['Item'];
+                        unset($response['Items']['Item']);
+                        $response['Items']['Item'][0] = $tempFirstItem;
+                    }
+
+                    foreach ($response['Items']['Item'] as $responseNum => $responseItem)
+                    {
+
+                        if(isset($responseItem['Variations']))
+                        {
+                            $TotalVariations = (int)$responseItem['Variations']['TotalVariations'];
+                            
+                            if($TotalVariations > 0)
+                            {
+                                $ProductVariations = $responseItem['Variations'];
+                            } else {
+                                $ProductVariations = "";
+                            }
+                        }
+                        elseif(!empty($responseItem['ParentASIN']))
+                        {
+                            $ParentASIN = $responseItem['ParentASIN'];
+                            $lookup = new Lookup();
+                            $lookup->setIdType('ASIN');
+                            $lookup->setResponseGroup(array('Variations', 'VariationMatrix', 'VariationSummary', 
+                'VariationOffers')); // More detailed information
+                            $lookup->setItemId($ParentASIN);
+                            $lookup->setMerchantId('Amazon');
+                            $lookup->setCondition('New');
+                            $var_response = $apaiIo->runOperation($lookup);
+                            $var_response = json_decode (json_encode (simplexml_load_string ($var_response)), true);
+                            //pre($var_response);
+                            //exit;
+                            $TotalVariations = (int)$var_response['Items']['Item']['Variations']['TotalVariations'];
+
+                            if(isset($var_response['Items']['Item']['Variations']) && $TotalVariations > 0)
+                            {
+                                $ProductVariations = $var_response['Items']['Item']['Variations'];
+                            }
+                            else
+                            {
+                                $ProductVariations = "";
+                            }
+                        } else {
+                            $ProductVariations = "";
+                        }
+                        
+                        $this->pre($ProductVariations);
+                    }
+
+                }
+            }
+        }
+
+    }
 }
 ?>

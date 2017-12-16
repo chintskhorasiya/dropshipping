@@ -75,4 +75,54 @@ class EbayController extends AppController {
         
     }
 
+    function ebay_user_token($user_encryptid)
+    {
+        $this->layout = 'default';
+        $this->checklogin();
+
+        $userid = $this->decrypt_data($user_encryptid,ID_LENGTH);
+        
+        $this->Session->read(md5(SITE_TITLE) . 'USERID');
+
+        if($userid != $this->Session->read(md5(SITE_TITLE) . 'USERID'))
+        {
+            $this->redirect(DEFAULT_URL . 'users/dashboard');
+        }
+
+        $this->loadmodel('EbayTokens');
+
+        $check_token_exist = $this->EbayTokens->find('first', array('conditions' => array('user_id'=>$userid)));
+
+        //var_dump($check_token_exist);exit;
+        $this->set('token_data', $check_token_exist);
+
+        if (!empty($this->data)) {
+            //print_r($this->data);exit;
+
+            //$this->loadmodel('EbayTokens');
+
+            //$check_token_exist = $this->EbayTokens->find('first', array('conditions' => array('user_id'=>$userid)));
+
+            if(!empty($check_token_exist))
+            {
+                $this->request->data['EbayTokens']['id'] = $check_token_exist['EbayTokens']['id'];
+                $this->request->data['EbayTokens']['user_id'] = $userid;
+            }
+
+            $EbayToken = $this->data['EbayTokens'];
+
+            var_dump($EbayToken);exit;
+
+            $this->EbayTokens->set($EbayToken);
+            //$this->pre($EbaySettings);exit;
+            
+            $saveSettings = $this->EbayTokens->save($EbaySettings);
+            $this->Session->setFlash('Token Saved!', 'default', array('class'=>'alert alert-success'), 'ebay_setting_save');
+
+            $this->redirect(DEFAULT_URL . 'ebay/ebay_user_token/'.$this->params['pass'][0]);
+        }
+
+        //echo "in user token";exit;
+    }
+
 }
