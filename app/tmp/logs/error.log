@@ -233,3 +233,88 @@ Stack Trace:
 #1 /var/www/dropshipping/lib/Cake/Routing/Dispatcher.php(167): Dispatcher->_invoke(Object(EbayController), Object(CakeRequest))
 #2 /var/www/dropshipping/app/webroot/index.php(111): Dispatcher->dispatch(Object(CakeRequest), Object(CakeResponse))
 #3 {main}
+2017-12-19 12:23:10 Error: Fatal Error (4): syntax error, unexpected '=' in [/var/www/dropshipping/app/Controller/ListingsController.php, line 685]
+2017-12-19 12:23:10 Error: [FatalErrorException] syntax error, unexpected '='
+Request URL: /dropshipping/listings/listing_review_approve/
+Stack Trace:
+#0 /var/www/dropshipping/lib/Cake/Error/ErrorHandler.php(213): ErrorHandler::handleFatalError(4, 'syntax error, u...', '/var/www/dropsh...', 685)
+#1 [internal function]: ErrorHandler::handleError(4, 'syntax error, u...', '/var/www/dropsh...', 685, Array)
+#2 /var/www/dropshipping/lib/Cake/Core/App.php(970): call_user_func('ErrorHandler::h...', 4, 'syntax error, u...', '/var/www/dropsh...', 685, Array)
+#3 /var/www/dropshipping/lib/Cake/Core/App.php(943): App::_checkFatalError()
+#4 [internal function]: App::shutdown()
+#5 {main}
+2017-12-19 13:08:58 Error: [GuzzleHttp\Exception\ServerException] Server error: `GET http://webservices.amazon.co.uk/onca/xml?AWSAccessKeyId=AKIAJL5OCKUJ5TXWF47Q&AssociateTag=dropshipping7-20&Condition=New&ItemId=B00ZETP93U%2CB01LY4727U%2CB00F89X6QI%2CB01LZX1ZKH%2CB003EGHDIO%2CB00KLAT1BS%2CB000T5G63G%2CB00F0R5HBA%2CB0055O0OCK%2CB075T7FGF3&MerchantId=Amazon&Operation=ItemLookup&ResponseGroup=Offers&Service=AWSECommerceService&Timestamp=2017-12-19T07%3A38%3A57Z&Version=2013-08-01&Signature=UsWXPz3Jx0JrClAREee35mxNiascPv9JRHwxRyvWY3w%3D` resulted in a `503 Service Unavailable` response:
+<?xml version="1.0"?>
+<ItemLookupErrorResponse xmlns="http://ecs.amazonaws.com/doc/2013-08-01/"><Error><Code>RequestThro (truncated...)
+
+Request URL: /dropshipping/products/reviseitems
+Stack Trace:
+#0 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Middleware.php(65): GuzzleHttp\Exception\RequestException::create(Object(GuzzleHttp\Psr7\Request), Object(GuzzleHttp\Psr7\Response))
+#1 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(203): GuzzleHttp\Middleware::GuzzleHttp\{closure}(Object(GuzzleHttp\Psr7\Response))
+#2 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(156): GuzzleHttp\Promise\Promise::callHandler(1, Object(GuzzleHttp\Psr7\Response), Array)
+#3 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/TaskQueue.php(47): GuzzleHttp\Promise\Promise::GuzzleHttp\Promise\{closure}()
+#4 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(246): GuzzleHttp\Promise\TaskQueue->run(true)
+#5 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(223): GuzzleHttp\Promise\Promise->invokeWaitFn()
+#6 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(267): GuzzleHttp\Promise\Promise->waitIfPending()
+#7 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(225): GuzzleHttp\Promise\Promise->invokeWaitList()
+#8 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(62): GuzzleHttp\Promise\Promise->waitIfPending()
+#9 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Client.php(104): GuzzleHttp\Promise\Promise->wait()
+#10 /var/www/dropshipping/app/webroot/vendor/exeu/apai-io/src/ApaiIO/Request/GuzzleRequest.php(75): GuzzleHttp\Client->send(Object(GuzzleHttp\Psr7\Request))
+#11 /var/www/dropshipping/app/webroot/vendor/exeu/apai-io/src/ApaiIO/ApaiIO.php(64): ApaiIO\Request\GuzzleRequest->perform(Object(ApaiIO\Operations\Lookup), Object(ApaiIO\Configuration\GenericConfiguration))
+#12 /var/www/dropshipping/app/Controller/ProductsController.php(537): ApaiIO\ApaiIO->runOperation(Object(ApaiIO\Operations\Lookup))
+#13 [internal function]: ProductsController->reviseitems()
+#14 /var/www/dropshipping/lib/Cake/Controller/Controller.php(491): ReflectionMethod->invokeArgs(Object(ProductsController), Array)
+#15 /var/www/dropshipping/lib/Cake/Routing/Dispatcher.php(193): Controller->invokeAction(Object(CakeRequest))
+#16 /var/www/dropshipping/lib/Cake/Routing/Dispatcher.php(167): Dispatcher->_invoke(Object(ProductsController), Object(CakeRequest))
+#17 /var/www/dropshipping/app/webroot/index.php(111): Dispatcher->dispatch(Object(CakeRequest), Object(CakeResponse))
+#18 {main}
+2017-12-19 13:09:53 Error: [GuzzleHttp\Exception\ServerException] Server error: `GET http://webservices.amazon.co.uk/onca/xml?AWSAccessKeyId=AKIAJL5OCKUJ5TXWF47Q&AssociateTag=dropshipping7-20&Condition=New&ItemId=B016224XHU%2CB075D5PWJQ%2CB016224YGA%2CB0162253JW%2CB01MA30A3V%2CB01IR0X088%2CB01DAC0P9K%2CB00K1PA6XK%2CB01KNU8R5G%2CB003MTTJOY&MerchantId=Amazon&Operation=ItemLookup&ResponseGroup=Offers&Service=AWSECommerceService&Timestamp=2017-12-19T07%3A39%3A52Z&Version=2013-08-01&Signature=5dEUIAroImpsI7YFBorbsc59%2BRajOYgSuYBEme4ozms%3D` resulted in a `503 Service Unavailable` response:
+<?xml version="1.0"?>
+<ItemLookupErrorResponse xmlns="http://ecs.amazonaws.com/doc/2013-08-01/"><Error><Code>RequestThro (truncated...)
+
+Request URL: /dropshipping/products/reviseitems
+Stack Trace:
+#0 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Middleware.php(65): GuzzleHttp\Exception\RequestException::create(Object(GuzzleHttp\Psr7\Request), Object(GuzzleHttp\Psr7\Response))
+#1 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(203): GuzzleHttp\Middleware::GuzzleHttp\{closure}(Object(GuzzleHttp\Psr7\Response))
+#2 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(156): GuzzleHttp\Promise\Promise::callHandler(1, Object(GuzzleHttp\Psr7\Response), Array)
+#3 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/TaskQueue.php(47): GuzzleHttp\Promise\Promise::GuzzleHttp\Promise\{closure}()
+#4 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(246): GuzzleHttp\Promise\TaskQueue->run(true)
+#5 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(223): GuzzleHttp\Promise\Promise->invokeWaitFn()
+#6 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(267): GuzzleHttp\Promise\Promise->waitIfPending()
+#7 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(225): GuzzleHttp\Promise\Promise->invokeWaitList()
+#8 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(62): GuzzleHttp\Promise\Promise->waitIfPending()
+#9 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Client.php(104): GuzzleHttp\Promise\Promise->wait()
+#10 /var/www/dropshipping/app/webroot/vendor/exeu/apai-io/src/ApaiIO/Request/GuzzleRequest.php(75): GuzzleHttp\Client->send(Object(GuzzleHttp\Psr7\Request))
+#11 /var/www/dropshipping/app/webroot/vendor/exeu/apai-io/src/ApaiIO/ApaiIO.php(64): ApaiIO\Request\GuzzleRequest->perform(Object(ApaiIO\Operations\Lookup), Object(ApaiIO\Configuration\GenericConfiguration))
+#12 /var/www/dropshipping/app/Controller/ProductsController.php(537): ApaiIO\ApaiIO->runOperation(Object(ApaiIO\Operations\Lookup))
+#13 [internal function]: ProductsController->reviseitems()
+#14 /var/www/dropshipping/lib/Cake/Controller/Controller.php(491): ReflectionMethod->invokeArgs(Object(ProductsController), Array)
+#15 /var/www/dropshipping/lib/Cake/Routing/Dispatcher.php(193): Controller->invokeAction(Object(CakeRequest))
+#16 /var/www/dropshipping/lib/Cake/Routing/Dispatcher.php(167): Dispatcher->_invoke(Object(ProductsController), Object(CakeRequest))
+#17 /var/www/dropshipping/app/webroot/index.php(111): Dispatcher->dispatch(Object(CakeRequest), Object(CakeResponse))
+#18 {main}
+2017-12-19 13:10:14 Error: [GuzzleHttp\Exception\ServerException] Server error: `GET http://webservices.amazon.co.uk/onca/xml?AWSAccessKeyId=AKIAJL5OCKUJ5TXWF47Q&AssociateTag=dropshipping7-20&Condition=New&ItemId=B00ZETP93U%2CB01LY4727U%2CB00F89X6QI%2CB01LZX1ZKH%2CB003EGHDIO%2CB00KLAT1BS%2CB000T5G63G%2CB00F0R5HBA%2CB0055O0OCK%2CB075T7FGF3&MerchantId=Amazon&Operation=ItemLookup&ResponseGroup=Offers&Service=AWSECommerceService&Timestamp=2017-12-19T07%3A40%3A14Z&Version=2013-08-01&Signature=yEaEmoT%2FLxfceNyekXLTh9dcCeEFRwtvtC56tX%2FobBI%3D` resulted in a `503 Service Unavailable` response:
+<?xml version="1.0"?>
+<ItemLookupErrorResponse xmlns="http://ecs.amazonaws.com/doc/2013-08-01/"><Error><Code>RequestThro (truncated...)
+
+Request URL: /dropshipping/products/reviseitems
+Stack Trace:
+#0 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Middleware.php(65): GuzzleHttp\Exception\RequestException::create(Object(GuzzleHttp\Psr7\Request), Object(GuzzleHttp\Psr7\Response))
+#1 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(203): GuzzleHttp\Middleware::GuzzleHttp\{closure}(Object(GuzzleHttp\Psr7\Response))
+#2 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(156): GuzzleHttp\Promise\Promise::callHandler(1, Object(GuzzleHttp\Psr7\Response), Array)
+#3 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/TaskQueue.php(47): GuzzleHttp\Promise\Promise::GuzzleHttp\Promise\{closure}()
+#4 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(246): GuzzleHttp\Promise\TaskQueue->run(true)
+#5 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(223): GuzzleHttp\Promise\Promise->invokeWaitFn()
+#6 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(267): GuzzleHttp\Promise\Promise->waitIfPending()
+#7 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(225): GuzzleHttp\Promise\Promise->invokeWaitList()
+#8 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/promises/src/Promise.php(62): GuzzleHttp\Promise\Promise->waitIfPending()
+#9 /var/www/dropshipping/app/webroot/vendor/guzzlehttp/guzzle/src/Client.php(104): GuzzleHttp\Promise\Promise->wait()
+#10 /var/www/dropshipping/app/webroot/vendor/exeu/apai-io/src/ApaiIO/Request/GuzzleRequest.php(75): GuzzleHttp\Client->send(Object(GuzzleHttp\Psr7\Request))
+#11 /var/www/dropshipping/app/webroot/vendor/exeu/apai-io/src/ApaiIO/ApaiIO.php(64): ApaiIO\Request\GuzzleRequest->perform(Object(ApaiIO\Operations\Lookup), Object(ApaiIO\Configuration\GenericConfiguration))
+#12 /var/www/dropshipping/app/Controller/ProductsController.php(537): ApaiIO\ApaiIO->runOperation(Object(ApaiIO\Operations\Lookup))
+#13 [internal function]: ProductsController->reviseitems()
+#14 /var/www/dropshipping/lib/Cake/Controller/Controller.php(491): ReflectionMethod->invokeArgs(Object(ProductsController), Array)
+#15 /var/www/dropshipping/lib/Cake/Routing/Dispatcher.php(193): Controller->invokeAction(Object(CakeRequest))
+#16 /var/www/dropshipping/lib/Cake/Routing/Dispatcher.php(167): Dispatcher->_invoke(Object(ProductsController), Object(CakeRequest))
+#17 /var/www/dropshipping/app/webroot/index.php(111): Dispatcher->dispatch(Object(CakeRequest), Object(CakeResponse))
+#18 {main}

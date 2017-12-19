@@ -94,7 +94,13 @@ class EbayController extends AppController {
         $check_token_exist = $this->EbayTokens->find('first', array('conditions' => array('user_id'=>$userid)));
 
         //var_dump($check_token_exist);exit;
-        $this->set('token_data', $check_token_exist);
+        if(!empty($check_token_exist))
+        {
+            $this->set('token_data', $check_token_exist);
+        }
+        else {
+            $this->set('token_data', '');
+        }
 
         if (!empty($this->data)) {
             //print_r($this->data);exit;
@@ -109,14 +115,15 @@ class EbayController extends AppController {
                 $this->request->data['EbayTokens']['user_id'] = $userid;
             }
 
+            $this->request->data['EbayTokens']['user_id'] = $userid;
             $EbayToken = $this->data['EbayTokens'];
 
-            var_dump($EbayToken);exit;
+            //var_dump($EbayToken);exit;
 
             $this->EbayTokens->set($EbayToken);
             //$this->pre($EbaySettings);exit;
             
-            $saveSettings = $this->EbayTokens->save($EbaySettings);
+            $saveSettings = $this->EbayTokens->save($EbayToken);
             $this->Session->setFlash('Token Saved!', 'default', array('class'=>'alert alert-success'), 'ebay_setting_save');
 
             $this->redirect(DEFAULT_URL . 'ebay/ebay_user_token/'.$this->params['pass'][0]);

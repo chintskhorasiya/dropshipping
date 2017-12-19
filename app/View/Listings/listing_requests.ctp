@@ -207,7 +207,7 @@
                             }
                             else
                             {
-                                echo "<h3>No searched record found.</h3>";
+                                echo "<h3>No record found.</h3>";
                             }
                             ?> 
                         </div>

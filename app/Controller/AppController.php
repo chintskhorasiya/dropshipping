@@ -77,7 +77,8 @@ class AppController extends Controller {
             'listing_requests'=>'Listing Request',
             'listing_settings'=>'Listing Settings',
             'listing_review'=>'Listing Review',
-            'repricing_work'=>'repricing_work'
+            'repricing_work'=>'repricing_work',
+            'ebay_user_token'=>'Ebay User Token'
         );
 //
         //echo $title_arr[$pagenames];
@@ -730,6 +731,21 @@ class AppController extends Controller {
         }
         else
         {
+            return false;
+        }
+    }
+
+    function get_user_token($user_id)
+    {
+        $this->loadmodel('EbayTokens');
+
+        $check_token_exist = $this->EbayTokens->find('first', array('conditions' => array('user_id'=>$user_id)));
+
+        if(!empty($check_token_exist))
+        {
+            return $check_token_exist['EbayTokens']['token'];
+        }
+        else {
             return false;
         }
     }

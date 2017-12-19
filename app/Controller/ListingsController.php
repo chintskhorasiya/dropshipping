@@ -680,6 +680,12 @@ class ListingsController extends AppController {
             $storeId = $_POST['store_id'];
             $userid = $this->Session->read(md5(SITE_TITLE) . 'USERID');
 
+            $saved_token = $this->get_user_token($userid);
+
+            //var_dump(EBAY_LIVE_AUTHTOKEN);
+            //echo "<br>";
+            //var_dump(EBAY_LIVE_SAVED_AUTHTOKEN);exit;
+
             //$config = require __DIR__.'/configuration.php';
             if($storeId == "2"){
                 $siteId = Constants\SiteIds::GB;
@@ -715,7 +721,14 @@ class ListingsController extends AppController {
 
                 ]);
 
-                $ebay_auth_token = EBAY_LIVE_AUTHTOKEN;
+                if(!empty($saved_token))
+                {
+                    $ebay_auth_token = $saved_token;
+                }
+                else
+                {
+                    $ebay_auth_token = EBAY_LIVE_AUTHTOKEN;
+                }
 
                 $paypal_email = "abrar6@rediffmail.com";
 
@@ -1510,7 +1523,7 @@ class ListingsController extends AppController {
                 $deletedCount = 0;
 
                 foreach ($productsSelectedArr as $productDelKey => $productToDelete) {
-                    var_dump($productToDelete);
+                    //var_dump($productToDelete);
 
                     $this->Product->id = $this->Product->field('id', array('id' => $productToDelete));
                     if ($this->Product->id)

@@ -20,15 +20,15 @@
                             <div class="position-center">
                                 <form action="" method="post" name="frm_ebay_setting" id="frm_ebay_setting">
                                     <div class="form-group col-md-12 padding-left-o">
-                                        <label>Please enter your user token</label>
+                                        <label>Your user token</label>
                                         <div class="form-group col-md-12 padding-left-o">
-                                            <textarea rows="20" cols="100" class="form-control" name="data[EbayTokens][token]"><?=$token_data['EbayTokens']['token']?></textarea>
+                                            <textarea rows="20" cols="100" disabled="disabled" class="form-control" name="data[EbayTokens][token]"><?php if(!empty($token_data)) { echo $token_data['EbayTokens']['token']; } ?></textarea>
                                         </div>
 
                                     </div>
                                     <div class="clear"></div>
                                     
-                                    <input class="btn btn-info" type="submit" name="btn_ebay_settings" id="btn_ebay_settings" value="Save Token" />
+                                    <input class="btn btn-info" type="submit" name="btn_ebay_settings" style="display: none;" id="btn_ebay_settings" value="Save Token" />
                                 </form>
                             </div>
                         </div>

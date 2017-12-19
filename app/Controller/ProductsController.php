@@ -1284,6 +1284,9 @@ class ProductsController extends AppController {
         $product_ebay_id = $product_data_from_asin['Product']['ebay_id'];
         $siteId = $product_data_from_asin['Product']['source_id'];
         $productId = $product_data_from_asin['Product']['id'];
+        $productUserId = $product_data_from_asin['Product']['user_id'];
+
+        $saved_token = $this->get_user_token($productUserId);
 
         //var_dump($productId);exit;
         
@@ -1299,7 +1302,13 @@ class ProductsController extends AppController {
                 'siteId'      => $siteId
             ]);
 
-            $ebay_auth_token = EBAY_LIVE_AUTHTOKEN;
+            //$ebay_auth_token = EBAY_LIVE_AUTHTOKEN;
+            if(!empty($saved_token)){
+                $ebay_auth_token = $saved_token;
+            }
+            else{
+                $ebay_auth_token = EBAY_LIVE_AUTHTOKEN;
+            }
         }
         else
         {
@@ -1399,6 +1408,9 @@ class ProductsController extends AppController {
         $product_ebay_id = $product_data_from_asin['Product']['ebay_id'];
         $siteId = $product_data_from_asin['Product']['source_id'];
         $productId = $product_data_from_asin['Product']['id'];
+        $productUserId = $product_data_from_asin['Product']['user_id'];
+
+        $saved_token = $this->get_user_token($productUserId);
 
         //var_dump($productId);exit;
         
@@ -1414,7 +1426,13 @@ class ProductsController extends AppController {
                 'siteId'      => $siteId
             ]);
 
-            $ebay_auth_token = EBAY_LIVE_AUTHTOKEN;
+            //$ebay_auth_token = EBAY_LIVE_AUTHTOKEN;
+            if(!empty($saved_token)){
+                $ebay_auth_token = $saved_token;
+            }
+            else{
+                $ebay_auth_token = EBAY_LIVE_AUTHTOKEN;
+            }
         }
         else
         {
