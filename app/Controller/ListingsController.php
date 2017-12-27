@@ -411,7 +411,7 @@ class ListingsController extends AppController {
         
         // [[CUSTOM]]
         $this->loadmodel('SourceSettings');
-        $source_settings_data = $this->SourceSettings->find('first',array('conditions' => array('source_id' => $product_source_id)));
+        $source_settings_data = $this->SourceSettings->find('first',array('conditions' => array('source_id' => $product_source_id, 'user_id'=>$userid)));
         $this->set('source_settings_data',$source_settings_data['SourceSettings']);
 
         $this->loadmodel('CategoriesMappings');
@@ -1269,7 +1269,23 @@ class ListingsController extends AppController {
                 //$item->ReturnPolicy->ReturnsAcceptedOption = 'ReturnsNotAccepted';
                 $item->ReturnPolicy->ReturnsAcceptedOption = 'ReturnsAccepted';
                 $item->ReturnPolicy->ReturnsWithinOption = 'Days_30';
-                $item->ShipToLocations[] = 'None';
+
+                $item->ShippingDetails = new Types\ShippingDetailsType();
+                $item->ShippingDetails->ShippingType = Enums\ShippingTypeCodeType::C_FLAT;
+
+                /**
+                 * Create our first domestic shipping option.
+                 * Offer the Economy Shipping (1-10 business days) service at $2.00 for the first item.
+                 * Additional items will be shipped at $1.00.
+                 */
+                $shippingService = new Types\ShippingServiceOptionsType();
+                $shippingService->ShippingServicePriority = 1;
+                $shippingService->ShippingService = 'ShippingMethodStandard';
+                $shippingService->ShippingServiceCost = new Types\AmountType(['value' => 0.00]);
+                $shippingService->ShippingServiceAdditionalCost = new Types\AmountType(['value' => 0.00]);
+                $item->ShippingDetails->ShippingServiceOptions[] = $shippingService;
+
+                $item->ShipToLocations[] = 'US';
             }
 
             //$this->pre($item);exit;
